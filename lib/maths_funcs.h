@@ -1,18 +1,9 @@
-/******************************************************************************\
-| OpenGL 4 Example Code.                                                       |
-| Accompanies written series "Anton's OpenGL 4 Tutorials"                      |
-| Email: anton at antongerdelan dot net                                        |
-| First version 27 Jan 2014                                                    |
-| Copyright Dr Anton Gerdelan, Trinity College Dublin, Ireland.                |
-| See individual libraries' separate legal notices                             |
-|******************************************************************************|
-| Commonly-used maths structures and functions                                 |
-| Simple-as-possible. No disgusting templates.                                 |
-| Structs vec3, mat4, versor. just hold arrays of floats called "v","m","q",   |
-| respectively. So, for example, to get values from a mat4 do: my_mat.m        |
-| A versor is the proper name for a unit quaternion.                           |
-| This is C++ because it's sort-of convenient to be able to use maths operators|
-\******************************************************************************/
+/*
+ * author: Yupan Liu
+ * date: Dec 27, 2015
+ * brief: vector and matrix library
+ * comment: modified by "Anton's OpenGL 4 Tutorial"
+ * */
 #ifndef _MATHS_FUNCS_H_
 #define _MATHS_FUNCS_H_
 

@@ -22,7 +22,7 @@ using namespace std;
 #define GL_LOG_FILE "gl.log"
 #define VERTEX_SHADER_FILE "shader/test_vs.glsl"
 #define FRAGMENT_SHADER_FILE "shader/test_fs.glsl"
-#define MESH_FILE "object/bunny.obj"
+#define MESH_FILE "object/cow.obj"
 #define oo 88888888.0f
 
 // keep track of window size for things like the viewport and the mouse cursor
@@ -30,13 +30,15 @@ int g_gl_width = 640;
 int g_gl_height = 480;
 GLFWwindow* g_window = NULL;
 
-float fmin(float x, float y) {return x < y ? x : y;}
-float fmax(float x, float y) {return x > y ? x : y;}
+float fMin(float x, float y) {return x < y ? x : y;}
+float fMax(float x, float y) {return x > y ? x : y;}
 
 GLfloat* normals = NULL; // array of vertex normals
 GLfloat* meanCurvature = NULL;
 GLfloat* smoothSaliency = NULL;
 int vertexCnt = 0.0f;
+
+void updateDisplayType(int type);
 
 /* load a mesh using the assimp library */
 bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
@@ -60,10 +62,6 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
 	glGenVertexArrays (1, vao);
 	glBindVertexArray (*vao);
 	
-	/* we really need to copy out all the data from AssImp's funny little data
-	structures into pure contiguous arrays before we copy it into data buffers
-	because assimp's texture coordinates are not really contiguous in memory.
-	i allocate some dynamic memory to do this. */
 	GLfloat* points = NULL; // array of vertex points
     if (!mesh->HasPositions()) {
         fprintf(stderr, "ERROR: mesh %s don't have vertex data!\n", file_name);
@@ -72,16 +70,16 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
 
     float xMin = oo, yMin = oo, zMin = oo;
     float xMax = -oo, yMax = -oo, zMax = -oo;
-    // Get the mesh's verteices
+    // Get the mesh's vertecies
     points = (GLfloat*)malloc (*point_count * 3 * sizeof (GLfloat));
     for (int i = 0; i < *point_count; i++) {
         const aiVector3D* vp = &(mesh->mVertices[i]);
         points[i * 3] = (GLfloat)vp->x;
         points[i * 3 + 1] = (GLfloat)vp->y;
         points[i * 3 + 2] = (GLfloat)vp->z;
-        xMin = fmin(xMin, vp->x), xMax = fmax(xMax, vp->x);
-        yMin = fmin(yMin, vp->y), yMax = fmax(yMax, vp->y);
-        zMin = fmin(zMin, vp->z), zMax = fmax(zMax, vp->z);
+        xMin = fMin(xMin, vp->x), xMax = fMax(xMax, vp->x);
+        yMin = fMin(yMin, vp->y), yMax = fMax(yMax, vp->y);
+        zMin = fMin(zMin, vp->z), zMax = fMax(zMax, vp->z);
     }
 
     // Calculate the mesh's normal
@@ -151,7 +149,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
             
             // For vertex i, update the relative part of its shape operator
             vec3 Tij = (identity_mat3() - wedge(Ni, Ni))*(Vi-Vj);
-            normalise(Tij);
+            Tij = normalise(Tij);
             float kappa_ij = 2*dot(Ni, Vj-Vi);
             kappa_ij /= get_squared_dist(Vi, Vj);
             // Maintain vi's shape operator
@@ -160,17 +158,20 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
 
             // For vertex j, update the relative part of its shape operator
             vec3 Tji = (identity_mat3() - wedge(Nj, Nj))*(Vj-Vi);
-            normalise(Tji);
+            Tji = normalise(Tji);
             float kappa_ji = 2*dot(Nj, Vi-Vj);
             kappa_ji /= get_squared_dist(Vi, Vj);
             // Maintain vj's shape operator
             shapeOperators[j] = shapeOperators[j] + (wedge(Tji, Tji) * (kappa_ji * faceArea));
+            
             vertexArea[j] += faceArea;
         }
     }
 
-    for(int i = 0; i < *point_count; i++)
-        shapeOperators[i] = shapeOperators[i] * (1.0f/vertexArea[i]);
+    for(int i = 0; i < *point_count; i++) {
+        shapeOperators[i] = shapeOperators[i] * (1.0f/vertexArea[i]);// * 10000000.0f;
+        //print(shapeOperators[i]);
+    }
     free(vertexArea);
 
     // Diagonalize the shape operator, and get the mean curvature
@@ -178,14 +179,14 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     for(int k = 0; k < *point_count; k++) {
         vec3 E1 = vec3(1.0f, 0.0f, 0.0f);
         vec3 Nk = vec3(normals[k*3], normals[k*3+1], normals[k*3+2]);
-        bool isMinus = get_squared_dist(E1, Nk) > get_squared_dist(E1, Nk * (-1.0f));
+        bool isMinus = get_squared_dist(E1, Nk) > get_squared_dist(E1 * (-1.0f), Nk);
         vec3 Wk;
         // Diagnoalization by the Householder transform
         if (!isMinus)
             Wk = E1 + Nk;
         else
             Wk = E1 - Nk;
-        normalise(Wk);
+        Wk = normalise(Wk);
         mat3 Qk = identity_mat3() - (wedge(Wk, Wk) * 2.0f);
         mat3 Mk = transpose(Qk) * shapeOperators[k] * Qk;
         // Calculate the mean curvature by M_k's trace;
@@ -198,7 +199,8 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     int* next = NULL;
     int* incidentVertex = NULL;
     first = (int*)malloc(*point_count * sizeof(int));
-    memset(first, -1, sizeof(*point_count * sizeof(int)));
+    for(int i = 0; i < *point_count; i++)
+        first[i] = -1;
     next = (int*)malloc(mesh->mNumFaces * 6 * sizeof(int));
     incidentVertex = (int*)malloc(mesh->mNumFaces * 6 * sizeof(int));
     int edgeCnt = 0;
@@ -225,6 +227,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         saliency[i] = (float*)malloc(*point_count * sizeof(float));
         maxSaliency[i] = -oo;
     }
+
     // Labeled the vertecies whether covered or not.
     bool* used = NULL;
     used = (bool*)malloc(*point_count * sizeof(bool));
@@ -234,15 +237,16 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
             saliency[i][k] = 0.0f;
         // Initialize the saliency's Gaussian filter.
         float gaussianSigma1[7], gaussianSigma2[7], sumSigma1[7], sumSigma2[7];
-        for(int i = 0; i < 7; i++)
+        for(int i = 2; i <= 6; i++)
             gaussianSigma1[i] = gaussianSigma2[i] = 0.0f,
             sumSigma1[i] = sumSigma2[i] = 0.0f;
         // Get the current vertex's information.
         aiVector3D* aiVec = &(mesh->mVertices[k]);
         vec3 vVec = vec3(aiVec->x, aiVec->y, aiVec->z);
         // Initialize the queue to find neighbourhood.
+        for(int i = 0; i < *point_count; i++)
+            used[i] = false;
         queue<int> Q;
-        memset(used, 0, *point_count * sizeof(bool));
         Q.push(k);
         used[k] = true;
         // Frsit BFS
@@ -282,7 +286,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         for(int i = 2; i <= 6; i++) {
             saliency[i][k] = fabs(gaussianSigma1[i]/sumSigma1[i]
                                 - gaussianSigma2[i]/sumSigma2[i]);
-            maxSaliency[i] = fmax(maxSaliency[i], saliency[i][k]);
+            maxSaliency[i] = fMax(maxSaliency[i], saliency[i][k]);
         }
     }
 
@@ -297,8 +301,9 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         aiVector3D* aiVec = &(mesh->mVertices[k]);
         vec3 vVec = vec3(aiVec->x, aiVec->y, aiVec->z);
         // Initialize the queue to find neighbourhood.
+        for(int i = 0; i < *point_count; i++)
+            used[i] = false;
         queue<int> Q;
-        memset(used, 0, *point_count * sizeof(bool));
         Q.push(k);
         used[k] = true;
         while(!Q.empty()) {
@@ -320,7 +325,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
             }
             // Update Gaussian filter
             for(int i = 2; i <= 6; i++) 
-                localMaxSaliency[2] = fmax(localMaxSaliency[2], saliency[i][idx]);
+                localMaxSaliency[i] = fMax(localMaxSaliency[i], saliency[i][idx]);
         }
         // Calculate the weighted saliency
         float saliencySum = 0.0f;
@@ -331,6 +336,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         }
         smoothSaliency[k] /= (GLfloat)saliencySum;
     }
+
     // Clean up resources
     free(first);
     free(next);
@@ -355,21 +361,8 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     }
 
     // Copy all normal vectors in mesh data into VBOs
-    {
-        GLuint vbo;
-        glGenBuffers (1, &vbo);
-        glBindBuffer (GL_ARRAY_BUFFER, vbo);
-        glBufferData (
-            GL_ARRAY_BUFFER,
-            3 * *point_count * sizeof (GLfloat),
-            normals,
-            GL_STATIC_DRAW
-        );
-        glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-        glEnableVertexAttribArray (1);
-        //free (normals);
-    }
-
+    
+    updateDisplayType(2);
 	aiReleaseImport (scene);
 	printf ("mesh loaded\n");
 	
@@ -382,15 +375,23 @@ inline void checkLegal(float &x) {
 }
 
 // Change the YUV to RGB, and guarantee all R,G,B values in [-1, 1].
-void getYUVtoRGB(float Y, float U, float V, float& R, float& G, float& B) {
-    R = Y + 1.4075 * (V - 128.0);
-    G = Y - 0.3455 * (U - 128.0) - (0.7169 * (V - 128.0f));
-    B = Y + 1.7790 * (U - 128.0);
+void getYUVtoRGB(bool flag, float Y, float U, float V, GLfloat& R, GLfloat& G, GLfloat& B) {
+    R = (GLfloat)(Y + 1.4075 * (V - 128.0));
+    G = (GLfloat)(Y - 0.3455 * (U - 128.0) - (0.7169 * (V - 128.0f)));
+    B = (GLfloat)(Y + 1.7790 * (U - 128.0));
+    if(!flag)
+        R = 255.0f - R,
+        B *= 0.8f;
+    R = (R-127.5f)/255.0f;
+    G = (G-127.5f)/255.0f;
+    B = (B-127.5f)/255.0f;
     checkLegal(R), checkLegal(G), checkLegal(B);   
+    //printf("$(%f %f %f)\n", R, G, B);
 }
 
 void updateDisplayType(int type) {
     GLuint vbo;
+
     glGenBuffers (1, &vbo);
     glBindBuffer (GL_ARRAY_BUFFER, vbo);
     float* colors = NULL;
@@ -406,22 +407,29 @@ void updateDisplayType(int type) {
         case 2: {
                     float xMin = oo, xMax = -oo;
                     for(int i = 0; i < vertexCnt; i++)
-                        xMin = fmin(xMin, meanCurvature[i]),
-                        xMax = fmax(xMax, meanCurvature[i]);
+                        xMin = fMin(xMin, fabs(meanCurvature[i])),
+                        xMax = fMax(xMax, fabs(meanCurvature[i]));
                     for(int i = 0; i < vertexCnt; i++) {
-                        float Y = 2.0f*((meanCurvature[i]-xMin)/(xMax-xMin)-0.5f);
-                        getYUVtoRGB(Y, 1.0f, 1.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
+                        float Y = 255.0f*((log(1e-8+fabs(meanCurvature[i]))-log(1e-8+xMin))
+                                / (log(1e-8+xMax)-log(1e-8+xMin)));
+                        getYUVtoRGB(meanCurvature[i]>0.0, Y, 255.0f, 255.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
+                        //colors[3*i] = Y;
+                        //colors[3*i+1] = 1.0f;
+                        //colors[3*i+2] = 1.0f;
                     }
+                    //printf("(%f, %f)\n", xMin, xMax);
+                    break;
                 }
         case 3: {
                     float xMin = oo, xMax = -oo;
                     for(int i = 0; i < vertexCnt; i++)
-                        xMin = fmin(xMin, smoothSaliency[i]),
-                        xMax = fmax(xMax, smoothSaliency[i]);
+                        xMin = fMin(xMin, fabs(smoothSaliency[i])),
+                        xMax = fMax(xMax, fabs(smoothSaliency[i]));
                     for(int i = 0; i < vertexCnt; i++) {
-                        float Y = 2.0f*((smoothSaliency[i]-xMin)/(xMax-xMin)-0.5f);
-                        getYUVtoRGB(Y, 1.0f, 1.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
+                        float Y = 255.0f*(log(1e-8+smoothSaliency[i])-log(1e-8+xMin))/(log(1e-8+xMax)-log(1e-8+xMin));
+                        getYUVtoRGB(smoothSaliency[i]>0, Y, 255.0f, 255.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
                     }
+                    break;
                 }
     }
     glBufferData (
@@ -510,6 +518,7 @@ inline void updateView() {
     mat4 view_mat = T * R;
     glUniformMatrix4fv (view_mat_location, 1, GL_FALSE, view_mat.m);
 }
+
 void keyBoardEvent(double elapsed_seconds) {
     // Update the display mode.
     if (glfwGetKey(g_window, GLFW_KEY_1))
