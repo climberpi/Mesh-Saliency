@@ -185,7 +185,7 @@ void keyBoardEvent(double elapsed_seconds) {
     }
 }
 
-void glfw_mouse_pos_callback(GLFWwindow* window, double xNow, double yNow) {
+void mouseEventHandler(GLFWwindow* window, double xNow, double yNow) {
     float EPS = 1e-6;
     float distRatio = 1.0f;
     float angleRatio = 0.3f;

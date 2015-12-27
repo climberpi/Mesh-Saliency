@@ -1,0 +1,10 @@
+GL_LOG_FILE log. local time Sun Dec 27 23:49:05 2015
+
+starting GLFW 3.0.2 Cocoa NSGL chdir menubarrenderer: Intel HD Graphics 5000 OpenGL Engine
+version: 4.1 INTEL-10.12.13
+creating shader from shader/test_vs.glsl...
+shader compiled. index 1
+creating shader from shader/test_fs.glsl...
+shader compiled. index 2
+created programme 3. attaching shaders 1 and 2...
+program 3 GL_VALIDATE_STATUS = GL_TRUE

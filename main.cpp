@@ -40,7 +40,7 @@ float fMax(float x, float y) {return x > y ? x : y;}
 
 int main () {
 	initializeOpenGL();
-    glfwSetCursorPosCallback(g_window, glfw_mouse_pos_callback);
+    glfwSetCursorPosCallback(g_window, mouseEventHandler);
 	// load the mesh using assimp
 
 	assert (load_mesh (MESH_FILE, &objVAO, &ObjPointCount));

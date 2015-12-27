@@ -61,4 +61,4 @@ inline void updateView();
 
 void keyBoardEvent(double elapsed_seconds);
 
-void glfw_mouse_pos_callback(GLFWwindow* window, double xNow, double yNow);
+void mouseEventHandler(GLFWwindow* window, double xNow, double yNow);

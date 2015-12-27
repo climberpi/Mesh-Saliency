@@ -180,6 +180,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         }
     }
     
+    printf("BFS 1\n");
     // Calculate the mesh saliency by BFS
     float diagonalLength = sqrt((xMax-xMin)*(xMax-xMin) + (yMax-yMin)*(yMax-yMin) + (zMax-zMin)*(zMax-zMin));
     float sigma = 0.003 * diagonalLength;
@@ -195,6 +196,8 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     bool* used = NULL;
     used = (bool*)malloc(*point_count * sizeof(bool));
     for(int k = 0; k < *point_count; k++) {
+        if(k%1000 == 0)
+            printf("#%d#\n", k);
         // Initialize the saliency and its local counter.
         for(int i = 2; i <= 6; i++)
             saliency[i][k] = 0.0f;
@@ -253,9 +256,12 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         }
     }
 
+    printf("BFS 2\n");
     // Second BFS and get the non-linear normailization of suppressian's saliency.
     smoothSaliency = (float*)malloc(*point_count * sizeof(float));
     for(int k = 0; k < *point_count; k++) {
+        if(k%1000 == 0)
+            printf("[%d]\n", k);
         smoothSaliency[k] = 0.0f;
         float localMaxSaliency[7];//, localCntSaliency[7];
         for(int i = 2; i <= 6; i++)
