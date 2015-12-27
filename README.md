@@ -1,7 +1,11 @@
-# Mesh-Saliency
-Based on siggraph 05 paper, mesh saliency
-
-Modified by "Anton's OpenGL 4 Tutorials", and using the follow code to compile the program:
+Mesh-Saliency
+=======================================
+The program ased on siggraph 05 paper, mesh saliency, implemented by OpenGL 4 and Assimp. Some parts modified by "Anton's OpenGL 4 Tutorials". And you can use the follow code to compile the program:
 ```
 make -f Makefile
 ```
+### Reference
+- Anton's OpenGL 4 Tutorials: <http://antongerdelan.net/opengl/>
+- Lee C H, Varshney A, Jacobs D W. Mesh saliency[C]//ACM transactions on graphics (TOG). ACM, 2005, 24(3): 659-666.
+- Taubin G. Estimating the tensor of curvature of a surface from a polyhedral approximation[C]//Computer Vision, 1995. Proceedings., Fifth International Conference on. IEEE, 1995: 902-907.
+- Garland M, Heckbert P S. Surface simplification using quadric error metrics[C]//Proceedings of the 24th annual conference on Computer graphics and interactive techniques. ACM Press/Addison-Wesley Publishing Co., 1997: 209-216.
