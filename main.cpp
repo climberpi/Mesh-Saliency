@@ -150,7 +150,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
             vec3 Vj = vec3(aiVj->x, aiVj->y, aiVj->z);
             
             // For vertex i, update the relative part of its shape operator
-            vec3 Tij = (identity_mat3 - wedge(Ni, Ni)*(Vi-Vj);
+            vec3 Tij = (identity_mat3() - wedge(Ni, Ni))*(Vi-Vj);
             normalise(Tij);
             float kappa_ij = 2*dot(Ni, Vj-Vi);
             kappa_ij /= get_squared_dist(Vi, Vj);
@@ -159,7 +159,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
             vertexArea[i] += faceArea;
 
             // For vertex j, update the relative part of its shape operator
-            vec3 Tji = (identity_mat3 - wedge(Nj, Nj)*(Vj-Vi);
+            vec3 Tji = (identity_mat3() - wedge(Nj, Nj))*(Vj-Vi);
             normalise(Tji);
             float kappa_ji = 2*dot(Nj, Vi-Vj);
             kappa_ji /= get_squared_dist(Vi, Vj);
@@ -178,7 +178,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     for(int k = 0; k < *point_count; k++) {
         vec3 E1 = vec3(1.0f, 0.0f, 0.0f);
         vec3 Nk = vec3(normals[k*3], normals[k*3+1], normals[k*3+2]);
-        bool isMinus = get_squared_dist(E1, Nk) > get_squared_dist(E1, -1.0f*Nk);
+        bool isMinus = get_squared_dist(E1, Nk) > get_squared_dist(E1, Nk * (-1.0f));
         vec3 Wk;
         // Diagnoalization by the Householder transform
         if (!isMinus)
@@ -186,7 +186,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         else
             Wk = E1 - Nk;
         normalise(Wk);
-        mat3 Qk = identity_mat3() - 2.0f * wedge(Wk, Wk);
+        mat3 Qk = identity_mat3() - (wedge(Wk, Wk) * 2.0f);
         mat3 Mk = transpose(Qk) * shapeOperators[k] * Qk;
         // Calculate the mean curvature by M_k's trace;
         meanCurvature[k] = (GLfloat)(Mk.m[4] + Mk.m[8]);
@@ -304,22 +304,21 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         while(!Q.empty()) {
             // Get the front element in the queue.
             int idx = Q.front(); Q.pop();
-            aiVec = &(mesh->mVertices[idx]);
-            vec3 idxVec = vec3(aiVec->x, aiVec->y, aiVec->z);
+            //aiVec = &(mesh->mVertices[idx]);
+            //vec3 idxVec = vec3(aiVec->x, aiVec->y, aiVec->z);
             // Put the next level vertecies into the queue.
             for(int e = first[idx]; e != -1; e = next[e]) {
-                int idxNext = incidentVertex[e];
+                int idxNext = incidentVertex[e]; 
                 // Expand the next level vertecies.
                 if(!used[idxNext]) {
-                    aiVec = &(mesh->mVertices[idxNext]);
+                    aiVec = &(mesh->mVertices[idxNext]); 
                     vec3 idxNextVec = vec3(aiVec->x, aiVec->y, aiVec->z);
                     if(get_squared_dist(vVec, idxNextVec) <= 36*sigma*sigma)
-                        Q.push(incidentVertex[e]),
+                        Q.push(incidentVertex[ e]),
                         used[incidentVertex[e]] = 1;
                 }
             }
             // Update Gaussian filter
-            float dist = get_squared_dist(vVec, idxVec);
             for(int i = 2; i <= 6; i++) 
                 localMaxSaliency[2] = fmax(localMaxSaliency[2], saliency[i][idx]);
         }
@@ -327,7 +326,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         float saliencySum = 0.0f;
         for(int i = 2; i <= 6; i++) {
             float factor = (maxSaliency[i]-localMaxSaliency[i])*(maxSaliency[i]-localMaxSaliency[i]);
-            smoothSaliency[k] += (GLfloat)saliencySum[i][k] * factor;
+            smoothSaliency[k] += (GLfloat)saliency[i][k] * factor;
             saliencySum += factor;
         }
         smoothSaliency[k] /= (GLfloat)saliencySum;
@@ -569,9 +568,9 @@ void glfw_mouse_pos_callback(GLFWwindow* window, double xNow, double yNow) {
     //printf("[%f,%f] pos:(%f %f %f) angle:(%f %f %f)\n", dx, dy, cam_pos[0], cam_pos[1], cam_pos[2], cam_xaw, cam_yaw, cam_zaw);
     bool isMoved = (fabs(dx) > EPS) || (fabs(dy) > EPS);
     if(isMoved) {
-        cam_xaw += dy;// * cos(dx);//distRatio * cos(dy) * cos(dx);// * cos(dy);
+        cam_xaw += distRatio * dy;// * cos(dx);//distRatio * cos(dy) * cos(dx);// * cos(dy);
         //cam_yaw += dy * sin(dx);//distRatio * cos(dy) * sin(dx);
-        cam_zaw += dx;//distRatio * sin(dy);// * cos(dy);
+        cam_zaw += distRatio * dx;//distRatio * sin(dy);// * cos(dy);
         updateView();
     }
     xLoc = xNow, yLoc = yNow;

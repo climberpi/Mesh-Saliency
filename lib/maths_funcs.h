@@ -84,7 +84,7 @@ struct mat3 {
 				float g, float h, float i);
     vec3 operator* (const vec3& rhs); // new
     mat3 operator* (const mat3& rhs); // new
-    mat3 operator* (const float rhs); // new
+    mat3 operator* (const float& rhs); // new
     mat3 operator+ (const mat3& rhs); // new
     mat3 operator- (const mat3& rhs); // new
     mat3& operator= (const mat3& rhs); // new

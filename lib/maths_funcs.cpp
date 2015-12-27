@@ -248,6 +248,15 @@ vec3 cross (const vec3& a, const vec3& b) {
 	return vec3 (x, y, z);
 }
 
+//new
+mat3 wedge (const vec3& a, const vec3& b) {
+	mat3 r = zero_mat3();
+	for(int i = 0; i < 3; i++)
+		for(int j = 0; j < 3; j++)
+			r.m[3*i+j] = a.v[i] * b.v[j];
+	return r;
+}
+
 float get_squared_dist (vec3 from, vec3 to) {
 	float x = (to.v[0] - from.v[0]) * (to.v[0] - from.v[0]);
 	float y = (to.v[1] - from.v[1]) * (to.v[1] - from.v[1]);
@@ -309,6 +318,23 @@ mat4 identity_mat4 () {
  3  7 11 15
 */
 
+//new
+vec3 mat3::operator* (const vec3& rhs) {
+	// 0x + 3y + 6z
+	float x = m[0] * rhs.v[0] +
+		m[3] * rhs.v[1] +
+		m[6] * rhs.v[2];
+	// 1x + 4y + 7z
+	float y = m[1] * rhs.v[0] +
+		m[4] * rhs.v[1] +
+		m[7] * rhs.v[2];
+	// 2x + 5y + 8z
+	float z = m[2] * rhs.v[0] +
+		m[5] * rhs.v[1] +
+		m[8] * rhs.v[2];
+	return vec3 (x, y, z);
+}
+
 vec4 mat4::operator* (const vec4& rhs) {
 	// 0x + 4y + 8z + 12w
 	float x =
@@ -334,6 +360,23 @@ vec4 mat4::operator* (const vec4& rhs) {
 	return vec4 (x, y, z, w);
 }
 
+//new
+mat3 mat3::operator* (const mat3& rhs) {
+	mat3 r = zero_mat3 ();
+	int r_index = 0;
+	for (int col = 0; col < 3; col++) {
+		for (int row = 0; row < 3; row++) {
+			float sum = 0.0f;
+			for (int i = 0; i < 3; i++) {
+				sum += rhs.m[i + col * 3] * m[row + i * 3];
+			}
+			r.m[r_index] = sum;
+			r_index++;
+		}
+	}
+	return r;
+}
+
 mat4 mat4::operator* (const mat4& rhs) {
 	mat4 r = zero_mat4 ();
 	int r_index = 0;
@@ -348,6 +391,38 @@ mat4 mat4::operator* (const mat4& rhs) {
 		}
 	}
 	return r;
+}
+
+//new
+mat3 mat3::operator* (const float& rhs) {
+	mat3 r = zero_mat3();
+	for(int i = 0; i < 9; i++)
+		r.m[i] = rhs * m[i];
+	return r;
+}
+
+//new
+mat3 mat3::operator+ (const mat3& rhs) {
+	mat3 r = zero_mat3 ();
+	for(int i = 0; i < 9; i++)
+		r.m[i] = m[i] + rhs.m[i];
+	return r;
+}
+
+//new
+mat3 mat3::operator- (const mat3& rhs) {
+	mat3 r = zero_mat3 ();
+	for(int i = 0; i < 9; i++)
+		r.m[i] = m[i] - rhs.m[i];
+	return r;
+}
+
+//new
+mat3& mat3::operator= (const mat3& rhs) {
+	for (int i = 0; i < 9; i++) {
+		m[i] = rhs.m[i];
+	}
+	return *this;
 }
 
 mat4& mat4::operator= (const mat4& rhs) {
@@ -480,6 +555,15 @@ mat4 inverse (const mat4& mm) {
 			mm.m[8] * mm.m[1] * mm.m[6] - mm.m[0] * mm.m[9] * mm.m[6] -
 			mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10]
 		)
+	);
+}
+
+//new
+mat3 transpose (const mat3& mm) {
+	return mat3 (
+		mm.m[0], mm.m[3], mm.m[6],
+		mm.m[1], mm.m[4], mm.m[7],
+		mm.m[2], mm.m[5], mm.m[8]
 	);
 }
 
