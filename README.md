@@ -1,9 +1,10 @@
 Mesh-Saliency
 =======================================
-The program ased on siggraph 05 paper, mesh saliency, implemented by OpenGL 4 and Assimp. Some parts modified by "Anton's OpenGL 4 Tutorials". And you can use the follow code to compile the program:
+The program ased on siggraph 05 paper, mesh saliency(Lee et al, 2005), implemented by OpenGL 4 and Assimp. Using mean curvative(Taubin, 1997) to improve the performance of Surface simplification(Garland et al, 1997). Some codes modified by "Anton's OpenGL 4 Tutorials". And you can use the follow code to compile the program:
 ```
 make -f Makefile
 ```
+
 ### Reference
 - Anton's OpenGL 4 Tutorials: <http://antongerdelan.net/opengl/>
 - Lee C H, Varshney A, Jacobs D W. Mesh saliency[C]//ACM transactions on graphics (TOG). ACM, 2005, 24(3): 659-666.
