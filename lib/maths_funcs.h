@@ -82,6 +82,12 @@ struct mat3 {
 	mat3 (float a, float b, float c,
 				float d, float e, float f,
 				float g, float h, float i);
+    vec3 operator* (const vec3& rhs); // new
+    mat3 operator* (const mat3& rhs); // new
+    mat3 operator* (const float rhs); // new
+    mat3 operator+ (const mat3& rhs); // new
+    mat3 operator- (const mat3& rhs); // new
+    mat3& operator= (const mat3& rhs); // new
 	float m[9];
 };
 
@@ -122,6 +128,7 @@ float length (const vec3& v);
 float length2 (const vec3& v);
 vec3 normalise (const vec3& v);
 float dot (const vec3& a, const vec3& b);
+mat3 wedge (const vec3& a, const vec3& b); //new
 vec3 cross (const vec3& a, const vec3& b);
 float get_squared_dist (vec3 from, vec3 to);
 float direction_to_heading (vec3 d);
@@ -134,6 +141,7 @@ mat4 identity_mat4 ();
 float determinant (const mat4& mm);
 mat4 inverse (const mat4& mm);
 mat4 transpose (const mat4& mm);
+mat3 transpose (const mat3& mm); //new
 // affine functions
 mat4 translate (const mat4& m, const vec3& v);
 mat4 rotate_x_deg (const mat4& m, float deg);

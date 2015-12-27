@@ -16,15 +16,27 @@
 #include <assert.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <queue>
+#include <iostream>
+using namespace std;
 #define GL_LOG_FILE "gl.log"
 #define VERTEX_SHADER_FILE "shader/test_vs.glsl"
 #define FRAGMENT_SHADER_FILE "shader/test_fs.glsl"
 #define MESH_FILE "object/bunny.obj"
+#define oo 88888888.0f
 
 // keep track of window size for things like the viewport and the mouse cursor
 int g_gl_width = 640;
 int g_gl_height = 480;
 GLFWwindow* g_window = NULL;
+
+float fmin(float x, float y) {return x < y ? x : y;}
+float fmax(float x, float y) {return x > y ? x : y;}
+
+GLfloat* normals = NULL; // array of vertex normals
+GLfloat* meanCurvature = NULL;
+GLfloat* smoothSaliency = NULL;
+int vertexCnt = 0.0f;
 
 /* load a mesh using the assimp library */
 bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
@@ -41,6 +53,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
 	
 	/* pass back number of vertex points in mesh */
 	*point_count = mesh->mNumVertices;
+    vertexCnt = *point_count;
 	
 	/* generate a VAO, using the pass-by-reference parameter that we give to the
 	function */
@@ -52,12 +65,13 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
 	because assimp's texture coordinates are not really contiguous in memory.
 	i allocate some dynamic memory to do this. */
 	GLfloat* points = NULL; // array of vertex points
-	GLfloat* normals = NULL; // array of vertex normals
     if (!mesh->HasPositions()) {
         fprintf(stderr, "ERROR: mesh %s don't have vertex data!\n", file_name);
         return false;
     }
 
+    float xMin = oo, yMin = oo, zMin = oo;
+    float xMax = -oo, yMax = -oo, zMax = -oo;
     // Get the mesh's verteices
     points = (GLfloat*)malloc (*point_count * 3 * sizeof (GLfloat));
     for (int i = 0; i < *point_count; i++) {
@@ -65,6 +79,9 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         points[i * 3] = (GLfloat)vp->x;
         points[i * 3 + 1] = (GLfloat)vp->y;
         points[i * 3 + 2] = (GLfloat)vp->z;
+        xMin = fmin(xMin, vp->x), xMax = fmax(xMax, vp->x);
+        yMin = fmin(yMin, vp->y), yMax = fmax(yMax, vp->y);
+        zMin = fmin(zMin, vp->z), zMax = fmax(zMax, vp->z);
     }
 
     // Calculate the mesh's normal
@@ -77,19 +94,15 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         const aiVector3D* v1 = &(mesh->mVertices[idx[0]]);
         const aiVector3D* v2 = &(mesh->mVertices[idx[1]]);
         const aiVector3D* v3 = &(mesh->mVertices[idx[2]]);
-        // vector1
-        float x1 = v2->x - v1->x;
-        float y1 = v2->y - v1->y;
-        float z1 = v2->z - v1->z;
-        // vector2
-        float x2 = v3->x - v2->x;
-        float y2 = v3->y - v2->y;
-        float z2 = v3->z - v2->z;
+        // vectors
+        vec3 faceVec1 = vec3(v2->x - v1->x, v2->y - v1->y, v2->z - v1->z);
+        vec3 faceVec2 = vec3(v3->x - v2->x, v3->y - v2->y, v3->z - v2->z);
         for(int k = 0; k < 3; k++) {
-            normals[idx[k]*3+0] += (GLfloat)(y1*z2-y2*z1),
-            normals[idx[k]*3+1] += (GLfloat)(x2*z1-x1*z2),
-            normals[idx[k]*3+2] += (GLfloat)(x1*y2-x2*y1);
-        }
+            vec3 crossProd = cross(faceVec1, faceVec2);
+            normals[idx[k]*3+0] += (GLfloat)crossProd.v[0],
+            normals[idx[k]*3+1] += (GLfloat)crossProd.v[1],
+            normals[idx[k]*3+2] += (GLfloat)crossProd.v[2];
+         }
     }
 
     for(int i = 0; i < *point_count; i++) {
@@ -99,6 +112,232 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         for(int k = 0; k < 3; k++)
             normals[i*3+k] /= sqrt(norm);
     }
+
+    // Calculate each vertecies' shape operator
+    mat3* shapeOperators = NULL;
+    float* vertexArea = NULL;
+    shapeOperators = (mat3*)malloc(*point_count * sizeof(mat3));
+    vertexArea = (float*)malloc(*point_count * sizeof(float));
+    for(int i = 0; i < *point_count; i++) {
+        vertexArea[i] = 0.0f;
+        for(int j = 0; j < 9; j++)
+            shapeOperators[i].m[j] = 0.0f;
+    }
+    for(int k = 0; k < mesh->mNumFaces; k++) {
+        // Calculate the face's area
+        aiVector3D* aiVec[3];
+        for(int idx = 0; idx < 3; idx++)
+            aiVec[idx] = &(mesh->mVertices[mesh->mFaces[k].mIndices[idx]]);
+        vec3 faceVec1 = vec3(aiVec[1]->x - aiVec[0]->x, 
+                             aiVec[1]->y - aiVec[0]->y, 
+                             aiVec[1]->z - aiVec[0]->z);
+        vec3 faceVec2 = vec3(aiVec[2]->x - aiVec[1]->x,
+                             aiVec[2]->y - aiVec[1]->y,
+                             aiVec[2]->z - aiVec[1]->z);
+        vec3 vecArea = cross(faceVec1, faceVec2);
+        float faceArea = sqrt(vecArea.v[0]*vecArea.v[0] + vecArea.v[1]*vecArea.v[1] + vecArea.v[2]*vecArea.v[2]);
+
+        for(int idx = 0; idx < 3; idx++) {
+            int i = mesh->mFaces[k].mIndices[idx];
+            int j = mesh->mFaces[k].mIndices[(idx+1)%3];
+            // Get vertex i and j's normal vectors.
+            vec3 Ni = vec3(normals[i*3], normals[i*3+1], normals[i*3+2]);
+            vec3 Nj = vec3(normals[j*3], normals[j*3+1], normals[j*3+2]);
+            // Get vertex i and j's location.
+            const aiVector3D* aiVi = &(mesh->mVertices[i]);
+            const aiVector3D* aiVj = &(mesh->mVertices[j]);
+            vec3 Vi = vec3(aiVi->x, aiVi->y, aiVi->z);
+            vec3 Vj = vec3(aiVj->x, aiVj->y, aiVj->z);
+            
+            // For vertex i, update the relative part of its shape operator
+            vec3 Tij = (identity_mat3 - wedge(Ni, Ni)*(Vi-Vj);
+            normalise(Tij);
+            float kappa_ij = 2*dot(Ni, Vj-Vi);
+            kappa_ij /= get_squared_dist(Vi, Vj);
+            // Maintain vi's shape operator
+            shapeOperators[i] = shapeOperators[i] + (wedge(Tij, Tij) * (kappa_ij * faceArea));
+            vertexArea[i] += faceArea;
+
+            // For vertex j, update the relative part of its shape operator
+            vec3 Tji = (identity_mat3 - wedge(Nj, Nj)*(Vj-Vi);
+            normalise(Tji);
+            float kappa_ji = 2*dot(Nj, Vi-Vj);
+            kappa_ji /= get_squared_dist(Vi, Vj);
+            // Maintain vj's shape operator
+            shapeOperators[j] = shapeOperators[j] + (wedge(Tji, Tji) * (kappa_ji * faceArea));
+            vertexArea[j] += faceArea;
+        }
+    }
+
+    for(int i = 0; i < *point_count; i++)
+        shapeOperators[i] = shapeOperators[i] * (1.0f/vertexArea[i]);
+    free(vertexArea);
+
+    // Diagonalize the shape operator, and get the mean curvature
+    meanCurvature = (float*)malloc(*point_count * sizeof(float));
+    for(int k = 0; k < *point_count; k++) {
+        vec3 E1 = vec3(1.0f, 0.0f, 0.0f);
+        vec3 Nk = vec3(normals[k*3], normals[k*3+1], normals[k*3+2]);
+        bool isMinus = get_squared_dist(E1, Nk) > get_squared_dist(E1, -1.0f*Nk);
+        vec3 Wk;
+        // Diagnoalization by the Householder transform
+        if (!isMinus)
+            Wk = E1 + Nk;
+        else
+            Wk = E1 - Nk;
+        normalise(Wk);
+        mat3 Qk = identity_mat3() - 2.0f * wedge(Wk, Wk);
+        mat3 Mk = transpose(Qk) * shapeOperators[k] * Qk;
+        // Calculate the mean curvature by M_k's trace;
+        meanCurvature[k] = (GLfloat)(Mk.m[4] + Mk.m[8]);
+    }
+    free(shapeOperators);
+
+    // Calculate the incident matrix ( as linked list )
+    int* first = NULL;
+    int* next = NULL;
+    int* incidentVertex = NULL;
+    first = (int*)malloc(*point_count * sizeof(int));
+    memset(first, -1, sizeof(*point_count * sizeof(int)));
+    next = (int*)malloc(mesh->mNumFaces * 6 * sizeof(int));
+    incidentVertex = (int*)malloc(mesh->mNumFaces * 6 * sizeof(int));
+    int edgeCnt = 0;
+    for(int k = 0; k < mesh->mNumFaces; k++) {
+        int idx[3];
+        for(int i = 0; i < 3; i++)
+            idx[i] = mesh->mFaces[k].mIndices[i];
+        for(int i = 0; i < 3; i++) {
+            int j1 = idx[(i+1)%3], j2 = idx[(i+2)%3];
+            incidentVertex[++edgeCnt] = j1;
+            next[edgeCnt] = first[idx[i]]; first[idx[i]] = edgeCnt;
+            incidentVertex[++edgeCnt] = j2;
+            next[edgeCnt] = first[idx[i]]; first[idx[i]] = edgeCnt;
+        }
+    }
+    
+    // Calculate the mesh saliency by BFS
+    float diagonalLength = sqrt((xMax-xMin)*(xMax-xMin) + (yMax-yMin)*(yMax-yMin) + (zMax-zMin)*(zMax-zMin));
+    float sigma = 0.003 * diagonalLength;
+    float* saliency[7];
+    float maxSaliency[7];
+    for(int i = 2; i <= 6; i++) {
+        saliency[i] = NULL;;
+        saliency[i] = (float*)malloc(*point_count * sizeof(float));
+        maxSaliency[i] = -oo;
+    }
+    // Labeled the vertecies whether covered or not.
+    bool* used = NULL;
+    used = (bool*)malloc(*point_count * sizeof(bool));
+    for(int k = 0; k < *point_count; k++) {
+        // Initialize the saliency and its local counter.
+        for(int i = 2; i <= 6; i++)
+            saliency[i][k] = 0.0f;
+        // Initialize the saliency's Gaussian filter.
+        float gaussianSigma1[7], gaussianSigma2[7], sumSigma1[7], sumSigma2[7];
+        for(int i = 0; i < 7; i++)
+            gaussianSigma1[i] = gaussianSigma2[i] = 0.0f,
+            sumSigma1[i] = sumSigma2[i] = 0.0f;
+        // Get the current vertex's information.
+        aiVector3D* aiVec = &(mesh->mVertices[k]);
+        vec3 vVec = vec3(aiVec->x, aiVec->y, aiVec->z);
+        // Initialize the queue to find neighbourhood.
+        queue<int> Q;
+        memset(used, 0, *point_count * sizeof(bool));
+        Q.push(k);
+        used[k] = true;
+        // Frsit BFS
+        while(!Q.empty()) {
+            // Get the front element in the queue.
+            int idx = Q.front(); Q.pop();
+            aiVec = &(mesh->mVertices[idx]);
+            vec3 idxVec = vec3(aiVec->x, aiVec->y, aiVec->z);
+            // Put the next level vertecies into the queue.
+            for(int e = first[idx]; e != -1; e = next[e]) {
+                int idxNext = incidentVertex[e];
+                // Expand the next level vertecies.
+                if(!used[idxNext]) {
+                    aiVec = &(mesh->mVertices[idxNext]);
+                    vec3 idxNextVec = vec3(aiVec->x, aiVec->y, aiVec->z);
+                    if(get_squared_dist(vVec, idxNextVec) <= 36*sigma*sigma)
+                        Q.push(incidentVertex[e]),
+                        used[incidentVertex[e]] = 1;
+                }
+            }
+            // Update Gaussian filter
+            float dist = get_squared_dist(vVec, idxVec);
+            for(int i = 2; i <= 6; i++) {
+                float sigmaHere = i*i*sigma*sigma;
+                if(dist <= sigmaHere) {
+                    float factor = exp(-dist/(2*sigmaHere));
+                    gaussianSigma1[i] += meanCurvature[idx] * factor;
+                    sumSigma1[i] += factor;
+                }
+                if(dist <= 2*sigmaHere) {
+                    float factor = exp(-dist/(8*sigma*sigma));
+                    gaussianSigma2[i] += meanCurvature[idx] * factor;
+                    sumSigma2[i] += factor;
+                }
+            }
+        }
+        for(int i = 2; i <= 6; i++) {
+            saliency[i][k] = fabs(gaussianSigma1[i]/sumSigma1[i]
+                                - gaussianSigma2[i]/sumSigma2[i]);
+            maxSaliency[i] = fmax(maxSaliency[i], saliency[i][k]);
+        }
+    }
+
+    // Second BFS and get the non-linear normailization of suppressian's saliency.
+    smoothSaliency = (float*)malloc(*point_count * sizeof(float));
+    for(int k = 0; k < *point_count; k++) {
+        smoothSaliency[k] = 0.0f;
+        float localMaxSaliency[7];//, localCntSaliency[7];
+        for(int i = 2; i <= 6; i++)
+            localMaxSaliency[i] = -oo;
+        // Get the current vertex's information.
+        aiVector3D* aiVec = &(mesh->mVertices[k]);
+        vec3 vVec = vec3(aiVec->x, aiVec->y, aiVec->z);
+        // Initialize the queue to find neighbourhood.
+        queue<int> Q;
+        memset(used, 0, *point_count * sizeof(bool));
+        Q.push(k);
+        used[k] = true;
+        while(!Q.empty()) {
+            // Get the front element in the queue.
+            int idx = Q.front(); Q.pop();
+            aiVec = &(mesh->mVertices[idx]);
+            vec3 idxVec = vec3(aiVec->x, aiVec->y, aiVec->z);
+            // Put the next level vertecies into the queue.
+            for(int e = first[idx]; e != -1; e = next[e]) {
+                int idxNext = incidentVertex[e];
+                // Expand the next level vertecies.
+                if(!used[idxNext]) {
+                    aiVec = &(mesh->mVertices[idxNext]);
+                    vec3 idxNextVec = vec3(aiVec->x, aiVec->y, aiVec->z);
+                    if(get_squared_dist(vVec, idxNextVec) <= 36*sigma*sigma)
+                        Q.push(incidentVertex[e]),
+                        used[incidentVertex[e]] = 1;
+                }
+            }
+            // Update Gaussian filter
+            float dist = get_squared_dist(vVec, idxVec);
+            for(int i = 2; i <= 6; i++) 
+                localMaxSaliency[2] = fmax(localMaxSaliency[2], saliency[i][idx]);
+        }
+        // Calculate the weighted saliency
+        float saliencySum = 0.0f;
+        for(int i = 2; i <= 6; i++) {
+            float factor = (maxSaliency[i]-localMaxSaliency[i])*(maxSaliency[i]-localMaxSaliency[i]);
+            smoothSaliency[k] += (GLfloat)saliencySum[i][k] * factor;
+            saliencySum += factor;
+        }
+        smoothSaliency[k] /= (GLfloat)saliencySum;
+    }
+    // Clean up resources
+    free(first);
+    free(next);
+    free(incidentVertex);
+    for(int i = 2; i <= 6; i++)
+        free(saliency[i]);
 	
 	// Copy all vertecies in mesh data into VBOs
     {
@@ -129,13 +368,71 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         );
         glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
         glEnableVertexAttribArray (1);
-        free (normals);
+        //free (normals);
     }
 
 	aiReleaseImport (scene);
 	printf ("mesh loaded\n");
 	
 	return true;
+}
+
+inline void checkLegal(float &x) {
+    if(x > 0.9999f) x = 0.9999f;
+    if(x < -0.9999f) x = -0.9999f;
+}
+
+// Change the YUV to RGB, and guarantee all R,G,B values in [-1, 1].
+void getYUVtoRGB(float Y, float U, float V, float& R, float& G, float& B) {
+    R = Y + 1.4075 * (V - 128.0);
+    G = Y - 0.3455 * (U - 128.0) - (0.7169 * (V - 128.0f));
+    B = Y + 1.7790 * (U - 128.0);
+    checkLegal(R), checkLegal(G), checkLegal(B);   
+}
+
+void updateDisplayType(int type) {
+    GLuint vbo;
+    glGenBuffers (1, &vbo);
+    glBindBuffer (GL_ARRAY_BUFFER, vbo);
+    float* colors = NULL;
+    colors = (float*)malloc(vertexCnt * 3 * sizeof(float));
+    switch(type) {
+        case 1: {
+                    for(int i = 0; i < vertexCnt; i++)
+                        colors[3*i+0] = normals[3*i+0],
+                        colors[3*i+1] = normals[3*i+1],
+                        colors[3*i+2] = normals[3*i+2];
+                    break;
+                }
+        case 2: {
+                    float xMin = oo, xMax = -oo;
+                    for(int i = 0; i < vertexCnt; i++)
+                        xMin = fmin(xMin, meanCurvature[i]),
+                        xMax = fmax(xMax, meanCurvature[i]);
+                    for(int i = 0; i < vertexCnt; i++) {
+                        float Y = 2.0f*((meanCurvature[i]-xMin)/(xMax-xMin)-0.5f);
+                        getYUVtoRGB(Y, 1.0f, 1.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
+                    }
+                }
+        case 3: {
+                    float xMin = oo, xMax = -oo;
+                    for(int i = 0; i < vertexCnt; i++)
+                        xMin = fmin(xMin, smoothSaliency[i]),
+                        xMax = fmax(xMax, smoothSaliency[i]);
+                    for(int i = 0; i < vertexCnt; i++) {
+                        float Y = 2.0f*((smoothSaliency[i]-xMin)/(xMax-xMin)-0.5f);
+                        getYUVtoRGB(Y, 1.0f, 1.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
+                    }
+                }
+    }
+    glBufferData (
+        GL_ARRAY_BUFFER,
+        3 * vertexCnt * sizeof (GLfloat),
+        colors,
+        GL_STATIC_DRAW
+    );
+    glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray (1);
 }
 
 void initializeOpenGL() {
@@ -215,6 +512,14 @@ inline void updateView() {
     glUniformMatrix4fv (view_mat_location, 1, GL_FALSE, view_mat.m);
 }
 void keyBoardEvent(double elapsed_seconds) {
+    // Update the display mode.
+    if (glfwGetKey(g_window, GLFW_KEY_1))
+        updateDisplayType(1);
+    else if (glfwGetKey(g_window, GLFW_KEY_2))
+        updateDisplayType(2);
+    else if (glfwGetKey(g_window, GLFW_KEY_3))
+        updateDisplayType(3);
+    // Update the object's location and angle.
     bool cam_moved = false;
     if (glfwGetKey (g_window, GLFW_KEY_A)) {
         cam_pos[0] -= cam_speed * elapsed_seconds;
