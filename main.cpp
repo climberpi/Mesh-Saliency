@@ -4,8 +4,8 @@
  * brief: normal, mean curvature and mesh saliency
  * comment: modified by "Anton's OpenGL 4 Tutorials"
  */
-#include "maths_funcs.h"
-#include "gl_utils.h"
+#include "lib/maths_funcs.h"
+#include "lib/gl_utils.h"
 #include <assimp/cimport.h> // C importer
 #include <assimp/scene.h> // collects data
 #include <assimp/postprocess.h> // various extra operations
@@ -17,8 +17,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #define GL_LOG_FILE "gl.log"
-#define VERTEX_SHADER_FILE "test_vs.glsl"
-#define FRAGMENT_SHADER_FILE "test_fs.glsl"
+#define VERTEX_SHADER_FILE "shader/test_vs.glsl"
+#define FRAGMENT_SHADER_FILE "shader/test_fs.glsl"
 #define MESH_FILE "object/bunny.obj"
 
 // keep track of window size for things like the viewport and the mouse cursor
