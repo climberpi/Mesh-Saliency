@@ -34,8 +34,8 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     float xMin = oo, yMin = oo, zMin = oo;
     float xMax = -oo, yMax = -oo, zMax = -oo;
     // Get the mesh's vertecies
-    points = (GLfloat*)malloc (*point_count * 3 * sizeof (GLfloat));
-    for (int i = 0; i < *point_count; i++) {
+    points = (GLfloat*)malloc (vertexCnt * 3 * sizeof (GLfloat));
+    for (int i = 0; i < vertexCnt; i++) {
         const aiVector3D* vp = &(mesh->mVertices[i]);
         points[i * 3] = (GLfloat)vp->x;
         points[i * 3 + 1] = (GLfloat)vp->y;
@@ -46,7 +46,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     }
 
     // Calculate the mesh's normal
-    normals = (GLfloat*)malloc(*point_count * 3 * sizeof(GLfloat));
+    normals = (GLfloat*)malloc(vertexCnt * 3 * sizeof(GLfloat));
     for(int i = 0; i < mesh->mNumFaces; i++) {
         int idx[3];
         for(int k = 0; k < 3; k++)
@@ -66,7 +66,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
          }
     }
 
-    for(int i = 0; i < *point_count; i++) {
+    for(int i = 0; i < vertexCnt; i++) {
         float norm = 0.0f;
         for(int k = 0; k < 3; k++)
             norm += normals[i*3+k]*normals[i*3+k];
@@ -77,9 +77,9 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     // Calculate each vertecies' shape operator
     mat3* shapeOperators = NULL;
     float* vertexArea = NULL;
-    shapeOperators = (mat3*)malloc(*point_count * sizeof(mat3));
-    vertexArea = (float*)malloc(*point_count * sizeof(float));
-    for(int i = 0; i < *point_count; i++) {
+    shapeOperators = (mat3*)malloc(vertexCnt * sizeof(mat3));
+    vertexArea = (float*)malloc(vertexCnt * sizeof(float));
+    for(int i = 0; i < vertexCnt ; i++) {
         vertexArea[i] = 0.0f;
         for(int j = 0; j < 9; j++)
             shapeOperators[i].m[j] = 0.0f;
@@ -131,15 +131,15 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         }
     }
 
-    for(int i = 0; i < *point_count; i++) {
+    for(int i = 0; i < vertexCnt; i++) {
         shapeOperators[i] = shapeOperators[i] * (1.0f/vertexArea[i]);// * 10000000.0f;
         //print(shapeOperators[i]);
     }
     free(vertexArea);
 
     // Diagonalize the shape operator, and get the mean curvature
-    meanCurvature = (float*)malloc(*point_count * sizeof(float));
-    for(int k = 0; k < *point_count; k++) {
+    meanCurvature = (float*)malloc(vertexCnt * sizeof(float));
+    for(int k = 0; k < vertexCnt; k++) {
         vec3 E1 = vec3(1.0f, 0.0f, 0.0f);
         vec3 Nk = vec3(normals[k*3], normals[k*3+1], normals[k*3+2]);
         bool isMinus = get_squared_dist(E1, Nk) > get_squared_dist(E1 * (-1.0f), Nk);
@@ -161,8 +161,8 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     int* first = NULL;
     int* next = NULL;
     int* incidentVertex = NULL;
-    first = (int*)malloc(*point_count * sizeof(int));
-    for(int i = 0; i < *point_count; i++)
+    first = (int*)malloc(vertexCnt * sizeof(int));
+    for(int i = 0; i < vertexCnt; i++)
         first[i] = -1;
     next = (int*)malloc(mesh->mNumFaces * 6 * sizeof(int));
     incidentVertex = (int*)malloc(mesh->mNumFaces * 6 * sizeof(int));
@@ -188,14 +188,14 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     float maxSaliency[7];
     for(int i = 2; i <= 6; i++) {
         saliency[i] = NULL;;
-        saliency[i] = (float*)malloc(*point_count * sizeof(float));
+        saliency[i] = (float*)malloc(vertexCnt * sizeof(float));
         maxSaliency[i] = -oo;
     }
 
     // Labeled the vertecies whether covered or not.
     bool* used = NULL;
-    used = (bool*)malloc(*point_count * sizeof(bool));
-    for(int k = 0; k < *point_count; k++) {
+    used = (bool*)malloc(vertexCnt * sizeof(bool));
+    for(int k = 0; k < vertexCnt; k++) {
         if(k%1000 == 0)
             printf("#%d#\n", k);
         // Initialize the saliency and its local counter.
@@ -210,7 +210,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         aiVector3D* aiVec = &(mesh->mVertices[k]);
         vec3 vVec = vec3(aiVec->x, aiVec->y, aiVec->z);
         // Initialize the queue to find neighbourhood.
-        for(int i = 0; i < *point_count; i++)
+        for(int i = 0; i < vertexCnt; i++)
             used[i] = false;
         queue<int> Q;
         Q.push(k);
@@ -258,8 +258,8 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
 
     printf("BFS 2\n");
     // Second BFS and get the non-linear normailization of suppressian's saliency.
-    smoothSaliency = (float*)malloc(*point_count * sizeof(float));
-    for(int k = 0; k < *point_count; k++) {
+    smoothSaliency = (float*)malloc(vertexCnt * sizeof(float));
+    for(int k = 0; k < vertexCnt; k++) {
         if(k%1000 == 0)
             printf("[%d]\n", k);
         smoothSaliency[k] = 0.0f;
@@ -270,7 +270,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         aiVector3D* aiVec = &(mesh->mVertices[k]);
         vec3 vVec = vec3(aiVec->x, aiVec->y, aiVec->z);
         // Initialize the queue to find neighbourhood.
-        for(int i = 0; i < *point_count; i++)
+        for(int i = 0; i < vertexCnt; i++)
             used[i] = false;
         queue<int> Q;
         Q.push(k);
@@ -312,7 +312,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     free(incidentVertex);
     for(int i = 2; i <= 6; i++)
         free(saliency[i]);
-	
+    
 	// Copy all vertecies in mesh data into VBOs
     {
         GLuint vbo;
@@ -320,7 +320,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         glBindBuffer (GL_ARRAY_BUFFER, vbo);
         glBufferData (
             GL_ARRAY_BUFFER,
-            3 * *point_count * sizeof (GLfloat),
+            3 * vertexCnt * sizeof (GLfloat),
             points,
             GL_STATIC_DRAW
         );
@@ -330,7 +330,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     }
 
     // Copy all normal vectors in mesh data into VBOs
-    updateDisplayType(2);
+    updateDisplayType(1);
 	aiReleaseImport (scene);
 	printf ("mesh loaded\n");
 	
