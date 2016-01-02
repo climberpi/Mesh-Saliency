@@ -14,6 +14,9 @@
 GLfloat* normals = NULL; // array of vertex normals
 GLfloat* meanCurvature = NULL;
 GLfloat* smoothSaliency = NULL;
+GLfloat* points = NULL;
+GLfloat* simplifiedPoints = NULL;
+GLfloat* simplifiedNormals = NULL;
 
 // keep track of window size for things like the viewport and the mouse cursor
 int g_gl_width = 640;
@@ -33,6 +36,7 @@ double xLoc, yLoc;
 double dx, dy;
 
 int vertexCnt = 0;
+int simplifiedVertexCnt = 0;
 
 GLuint objVAO;
 int ObjPointCount = 0;
@@ -89,6 +93,7 @@ static void qslim_init() {
 static void qslim_run() {
     decimate_init(M0, pair_selection_tolerance);
     while( M0.validFaceCount > face_target&& decimate_min_error() < error_tolerance )
+        //printf("[%d] %d\n", face_target, M0.validFaceCount),
 		decimate_contract(M0);
 }
 
@@ -121,6 +126,15 @@ bool loadMeshQSlim(const char* fileName, Mesh& m) {
 }
 
 static void ReplaceM(Mesh& m) {
+    if(simplifiedPoints != NULL)
+        free(simplifiedPoints);
+    if(simplifiedNormals != NULL)
+        free(simplifiedNormals);
+    simplifiedVertexCnt = M0.vertCount();
+    int simplifiedFaceCnt = M0.faceCount();
+    simplifiedPoints = (GLfloat*)malloc(simplifiedVertexCnt * 3 * sizeof(GLfloat));
+    simplifiedNormals = (GLfloat*)malloc(simplifiedVertexCnt * 3 * sizeof(GLfloat));
+
     vector<Point3d> newVertices;
 	m.Vertices.swap(newVertices);
     vector<Triangle> newFaces;
@@ -128,26 +142,48 @@ static void ReplaceM(Mesh& m) {
 	m.Vertices.reserve(M0.vertCount());
 	m.Faces.reserve(M0.faceCount());
 	int* map=new int[M0.vertCount()];
-	for(int i=0;i<M0.vertCount();i++)
-		map[i]=-1;
-	for(int i=0;i<M0.vertCount();i++) {
-		if(M0.vertex (i)->isValid()) {
-			real* data=M0.vertex(i)->raw();
-			Point3d p((float)data[0],(float)data[1],(float)data[2]);
-			map[i]=m.AddVertex(p);
+	for(int i = 0; i < simplifiedVertexCnt; i++)
+		map[i] = -1;
+    // Get the simplified mesh's vertecies
+	for(int i = 0; i < simplifiedVertexCnt; i++) 
+		if(M0.vertex(i)->isValid()) {
+			real* data = M0.vertex(i)->raw();
+			Point3d p((float)data[0], (float)data[1], (float)data[2]);
+			map[i] = m.AddVertex(p);
+            simplifiedPoints[i*3+0] = (GLfloat)data[0];
+            simplifiedPoints[i*3+1] = (GLfloat)data[1];
+            simplifiedPoints[i*3+2] = (GLfloat)data[2];
 		}
-	}
-	for(int i=0;i<M0.faceCount();i++)
-	{
-		if(M0.face(i)->isValid())
-		{
+    // Calculate the simplified mesh's normal
+	for(int i = 0; i < simplifiedFaceCnt; i++)
+		if(M0.face(i)->isValid()) {
 			Vertex* v0 = M0.face(i)->vertex(0);
 			Vertex* v1 = M0.face(i)->vertex(1);
 			Vertex* v2 = M0.face(i)->vertex(2);
-			Triangle t(map[v0->uniqID], map[v1->uniqID], map[v2->uniqID]);
+            int idx[3];
+            idx[0] = map[v0->uniqID],
+            idx[1] = map[v1->uniqID],
+            idx[2] = map[v2->uniqID];
+			Triangle t(idx[0], idx[1], idx[2]);
 			m.AddFace(t);
+
+            vec3 faceVec1 = vec3(&v1[0] - &v0[0], &v1[1] - &v0[1], &v1[2] - &v0[2]);
+            vec3 faceVec2 = vec3(&v2[0] - &v1[0], &v2[1] - &v1[1], &v2[2] - &v1[2]);
+            vec3 crossProd = cross(faceVec1, faceVec2);
+            for(int k = 0; k < 3; k++) {
+                simplifiedNormals[idx[k]*3+0] += (GLfloat)crossProd.v[0];
+                simplifiedNormals[idx[k]*3+1] += (GLfloat)crossProd.v[1];
+                simplifiedNormals[idx[k]*3+2] += (GLfloat)crossProd.v[2];
+            }
 		}
-	}
+
+    for(int i = 0; i < simplifiedVertexCnt; i++) {
+        float norm = 0.0f;
+        for(int k = 0; k < 3; k++)
+            norm += simplifiedNormals[i*3+k]*simplifiedNormals[i*3+k];
+        for(int k = 0; k < 3; k++)
+            simplifiedNormals[i*3+k] /= sqrt(norm);
+    }
 	delete[] map;
 }
 
@@ -155,6 +191,7 @@ void callQSlim(Mesh& m) {
     assert( loadMeshQSlim(MESH_FILE, m) );
 	qslim_init();
     float ratio = 60.0f;
+    int originalFaceCnt = m.Faces.size();
 	face_target = (int)(1.0f*m.Faces.size()*ratio/100.0f);
 	error_tolerance = oo;
 	will_use_plane_constraint = true;
@@ -168,8 +205,7 @@ void callQSlim(Mesh& m) {
 	pair_selection_tolerance = 0.0;
 	qslim_run();
 	ReplaceM(m);
-    printf("Simplification: %d / %lu\n", face_target, m.Faces.size());
-    //updateDisplayMesh(m);
+    printf("Simplification: %d / %d\n", face_target, originalFaceCnt);
 }
 
 int main () {

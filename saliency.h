@@ -20,6 +20,7 @@ using namespace std;
 extern GLfloat* normals; // array of vertex normals
 extern GLfloat* meanCurvature;
 extern GLfloat* smoothSaliency;
+extern GLfloat* points;
 
 // Load a mesh using the assimp library, and calculate its mesh saliency
 bool load_mesh (const char* file_name, GLuint* vao, int* point_count);

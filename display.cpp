@@ -28,58 +28,80 @@ void getYUVtoRGB(bool flag, float Y, float U, float V, GLfloat& R, GLfloat& G, G
 
 // Update display mode depends on keyboard state
 void updateDisplayType(int type) {
-    GLuint vbo;
-
-    glGenBuffers (1, &vbo);
-    glBindBuffer (GL_ARRAY_BUFFER, vbo);
-    float* colors = NULL;
-    colors = (float*)malloc(vertexCnt * 3 * sizeof(float));
-    switch(type) {
-        // Normals mode
-        case 1: {
-                    for(int i = 0; i < vertexCnt; i++)
-                        colors[3*i+0] = normals[3*i+0],
-                        colors[3*i+1] = normals[3*i+1],
-                        colors[3*i+2] = normals[3*i+2];
-                    break;
-                }
-        // Mean curvature mode
-        case 2: {
-                    float xMin = oo, xMax = -oo;
-                    for(int i = 0; i < vertexCnt; i++)
-                        xMin = fMin(xMin, fabs(meanCurvature[i])),
-                        xMax = fMax(xMax, fabs(meanCurvature[i]));
-                    // Normalize the Y value
-                    for(int i = 0; i < vertexCnt; i++) {
-                        float Y = 255.0f*((log(1e-8+fabs(meanCurvature[i]))-log(1e-8+xMin))
-                                / (log(1e-8+xMax)-log(1e-8+xMin)));
-                        getYUVtoRGB(meanCurvature[i]>0.0, Y, 255.0f, 255.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
-                    }
-                    break;
-                }
-        // Mesh saliency mode
-        case 3: {
-                    float xMin = oo, xMax = -oo;
-                    for(int i = 0; i < vertexCnt; i++)
-                        xMin = fMin(xMin, fabs(smoothSaliency[i])),
-                        xMax = fMax(xMax, fabs(smoothSaliency[i]));
-                    // Normalize the Y value
-                    for(int i = 0; i < vertexCnt; i++) {
-                        float Y = 255.0f*(log(1e-8+smoothSaliency[i])-log(1e-8+xMin))
-                                / (log(1e-8+xMax)-log(1e-8+xMin));
-                        getYUVtoRGB(smoothSaliency[i]>0, Y, 255.0f, 255.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
-                    }
-                    break;
-                }
+    if(type != 1 && type != 2 && type != 3 && type != 4 && type != 5) {
+        fprintf(stderr, "Wrong Display Type!\n");
+        return;
     }
-    glBufferData (
-        GL_ARRAY_BUFFER,
-        3 * vertexCnt * sizeof (GLfloat),
-        colors,
-        GL_STATIC_DRAW
-    );
-    glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray (1);
+
+    int vertexCntHere = (type >= 4 ? simplifiedVertexCnt : vertexCnt);
+    // Copy all vertecies in mesh data into VBOs
+    {
+        GLuint vbo;
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData (
+            GL_ARRAY_BUFFER,
+            3 * vertexCntHere * sizeof (GLfloat),
+            type >= 4 ? simplifiedPoints : points,
+            GL_STATIC_DRAW
+        );
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(0);
+    }
+    // Copy all vertices' color values in mesh data into VBOs
+    {
+        GLuint vbo;
+        glGenBuffers (1, &vbo);
+        glBindBuffer (GL_ARRAY_BUFFER, vbo);
+        float* colors = NULL;
+        colors = (float*)malloc(vertexCntHere * 3 * sizeof(float));
+        switch(type) {
+            // Normals mode
+            case 1: case 4:{
+                        for(int i = 0; i < vertexCntHere; i++)
+                            colors[3*i+0] = normals[3*i+0],
+                            colors[3*i+1] = normals[3*i+1],
+                            colors[3*i+2] = normals[3*i+2];
+                        break;
+                    }
+            // Mean curvature mode
+            case 2: {
+                        float xMin = oo, xMax = -oo;
+                        for(int i = 0; i < vertexCntHere; i++)
+                            xMin = fMin(xMin, fabs(meanCurvature[i])),
+                            xMax = fMax(xMax, fabs(meanCurvature[i]));
+                        // Normalize the Y value
+                        for(int i = 0; i < vertexCntHere; i++) {
+                            float Y = 255.0f*((log(1e-8+fabs(meanCurvature[i]))-log(1e-8+xMin))
+                                    / (log(1e-8+xMax)-log(1e-8+xMin)));
+                            getYUVtoRGB(meanCurvature[i]>0.0, Y, 255.0f, 255.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
+                        }
+                        break;
+                    }
+            // Mesh saliency mode
+            case 3: {
+                        float xMin = oo, xMax = -oo;
+                        for(int i = 0; i < vertexCntHere; i++)
+                            xMin = fMin(xMin, fabs(smoothSaliency[i])),
+                            xMax = fMax(xMax, fabs(smoothSaliency[i]));
+                        // Normalize the Y value
+                        for(int i = 0; i < vertexCntHere; i++) {
+                            float Y = 255.0f*(log(1e-8+smoothSaliency[i])-log(1e-8+xMin))
+                                    / (log(1e-8+xMax)-log(1e-8+xMin));
+                            getYUVtoRGB(smoothSaliency[i]>0, Y, 255.0f, 255.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
+                        }
+                        break;
+                    }
+        }
+        glBufferData (
+            GL_ARRAY_BUFFER,
+            3 * vertexCntHere * sizeof (GLfloat),
+            colors,
+            GL_STATIC_DRAW
+        );
+        glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray (1);
+    }
 }
 
 void initializeOpenGL() {
@@ -143,6 +165,8 @@ void keyBoardEvent(double elapsed_seconds) {
         updateDisplayType(2);
     else if (glfwGetKey(g_window, GLFW_KEY_3))
         updateDisplayType(3);
+    else if (glfwGetKey(g_window, GLFW_KEY_4))
+        updateDisplayType(4);
     // Update the object's location and angle.
     bool cam_moved = false;
     if (glfwGetKey (g_window, GLFW_KEY_A)) {

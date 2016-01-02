@@ -25,7 +25,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     glGenVertexArrays (1, vao);
 	glBindVertexArray (*vao);
 	
-	GLfloat* points = NULL; // array of vertex points
+	points = NULL; // array of vertex points
     if (!mesh->HasPositions()) {
         fprintf(stderr, "ERROR: mesh %s don't have vertex data!\n", file_name);
         return false;
@@ -58,8 +58,8 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         // vectors
         vec3 faceVec1 = vec3(v2->x - v1->x, v2->y - v1->y, v2->z - v1->z);
         vec3 faceVec2 = vec3(v3->x - v2->x, v3->y - v2->y, v3->z - v2->z);
+        vec3 crossProd = cross(faceVec1, faceVec2);
         for(int k = 0; k < 3; k++) {
-            vec3 crossProd = cross(faceVec1, faceVec2);
             normals[idx[k]*3+0] += (GLfloat)crossProd.v[0],
             normals[idx[k]*3+1] += (GLfloat)crossProd.v[1],
             normals[idx[k]*3+2] += (GLfloat)crossProd.v[2];
@@ -313,7 +313,8 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     for(int i = 2; i <= 6; i++)
         free(saliency[i]);
     
-	// Copy all vertecies in mesh data into VBOs
+	// Copy all vertecies and normal vertors in mesh data into VBOs
+    /*
     {
         GLuint vbo;
         glGenBuffers (1, &vbo);
@@ -328,6 +329,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         glEnableVertexAttribArray (0);
         free (points);
     }
+    */
 
     // Copy all normal vectors in mesh data into VBOs
     updateDisplayType(1);

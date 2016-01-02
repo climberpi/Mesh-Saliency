@@ -1189,7 +1189,7 @@ static bool pair_is_valid(Vertex *u, Vertex *v)
 {
 	return norm2(*u - *v) < proximity_limit;
 }
-static int predict_face(Face& F, Vertex *v1, Vertex *v2, Vec3& vnew,Vec3& f1, Vec3& f2, Vec3& f3)
+int predict_face(Face& F, Vertex *v1, Vertex *v2, Vec3& vnew,Vec3& f1, Vec3& f2, Vec3& f3)
 {
 	int nmapped = 0;
 	if( F.vertex(0) == v1 || F.vertex(0) == v2 )
@@ -1252,7 +1252,8 @@ static void compute_pair_info(pair_info *pair)
 }
 static void do_contract(Model& m, pair_info *pair)
 {
-	Vertex *v0 = pair->v0;  Vertex *v1 = pair->v1;
+	Vertex *v0 = pair->v0;  
+    Vertex *v1 = pair->v1;
 	vert_info& v0_info = vertex_info(v0);
 	vert_info& v1_info = vertex_info(v1);
 	Vec3 vnew = pair->candidate;

@@ -140,7 +140,7 @@ public:
 	real& operator()(int i)       { return elt[i]; }
 	real  operator()(int i) const { return elt[i]; }
 	real& operator[](int i)       { return elt[i]; }
-	real  operator[](int i) const { return elt[i]; }
+	float  operator[](int i) const { return elt[i]; }
 	real *raw()             { return elt; }
 	const real *raw() const { return elt; }
 	inline bool operator==(const Vec3& v) const;

@@ -26,8 +26,12 @@ extern float fMax(float x, float y);
 extern GLfloat* normals; // array of vertex normals
 extern GLfloat* meanCurvature;
 extern GLfloat* smoothSaliency;
+extern GLfloat* points;
+extern GLfloat* simplifiedPoints;
+extern GLfloat* simplifiedNormals;
 
 extern int vertexCnt;
+extern int simplifiedVertexCnt;
 
 extern GLuint objVAO;
 extern int ObjPointCount;
