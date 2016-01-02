@@ -92,32 +92,46 @@ static void qslim_run() {
 		decimate_contract(M0);
 }
 
-static void InitM0(Mesh& m) {
-	for(size_t i=0;i<m.Vertices.size();i++)
-	{
-		Point3d p=m.Vertices[i];
-		Vec3 v(p.X,p.Y,p.Z);
-		M0.in_Vertex(v);
-	}
-	for(size_t i=0;i<m.Faces.size();i++)
-	{
-		Triangle t=m.Faces[i];
-		M0.in_Face(t.P0Index,t.P1Index,t.P2Index);
-	}
+bool loadMeshQSlim(const char* fileName, Mesh& m) {
+    // Load the mesh by assimp.
+    const aiScene* scene = aiImportFile(fileName, aiProcess_Triangulate);
+    if (!scene) {
+        fprintf(stderr, "ERROR: reading mesh %s\n", fileName);
+        return false;
+    }
+    const aiMesh* mesh = scene->mMeshes[0];
+    const int vertexCntHere = mesh->mNumVertices;
+    for(int i = 0; i < vertexCntHere; i++) {
+        const aiVector3D* vp = &(mesh->mVertices[i]);
+        Point3d p3d(vp->x, vp->y, vp->z);
+        m.AddVertex(p3d);
+        Vec3 v(vp->x, vp->y, vp->z);
+        M0.in_Vertex(v);
+    }
+    const int faceCntHere = mesh->mNumFaces;
+    for(int i = 0; i < faceCntHere; i++) {
+        int idx[3];
+        for(int k = 0; k < 3; k++)
+            idx[k] = mesh->mFaces[i].mIndices[k];
+        Triangle t(idx[0], idx[1], idx[2]);
+        m.AddFace(t);
+        M0.in_Face(idx[0], idx[1], idx[2]);
+    }
+    return true;
 }
 
 static void ReplaceM(Mesh& m) {
-	m.Vertices.swap(std::vector<Point3d>());
-	m.Faces.swap(std::vector<Triangle>());
+    vector<Point3d> newVertices;
+	m.Vertices.swap(newVertices);
+    vector<Triangle> newFaces;
+	m.Faces.swap(newFaces);
 	m.Vertices.reserve(M0.vertCount());
 	m.Faces.reserve(M0.faceCount());
 	int* map=new int[M0.vertCount()];
 	for(int i=0;i<M0.vertCount();i++)
 		map[i]=-1;
-	for(int i=0;i<M0.vertCount();i++)
-	{
-		if(M0.vertex(i)->isValid())
-		{
+	for(int i=0;i<M0.vertCount();i++) {
+		if(M0.vertex (i)->isValid()) {
 			real* data=M0.vertex(i)->raw();
 			Point3d p((float)data[0],(float)data[1],(float)data[2]);
 			map[i]=m.AddVertex(p);
@@ -127,14 +141,35 @@ static void ReplaceM(Mesh& m) {
 	{
 		if(M0.face(i)->isValid())
 		{
-			Vertex* v0= M0.face(i)->vertex(0);
-			Vertex* v1= M0.face(i)->vertex(1);
-			Vertex* v2= M0.face(i)->vertex(2);
-			Triangle t(map[v0->uniqID],map[v1->uniqID],map[v2->uniqID]);
+			Vertex* v0 = M0.face(i)->vertex(0);
+			Vertex* v1 = M0.face(i)->vertex(1);
+			Vertex* v2 = M0.face(i)->vertex(2);
+			Triangle t(map[v0->uniqID], map[v1->uniqID], map[v2->uniqID]);
 			m.AddFace(t);
 		}
 	}
 	delete[] map;
+}
+
+void callQSlim(Mesh& m) {
+    assert( loadMeshQSlim(MESH_FILE, m) );
+	qslim_init();
+    float ratio = 60.0f;
+	face_target = (int)(1.0f*m.Faces.size()*ratio/100.0f);
+	error_tolerance = oo;
+	will_use_plane_constraint = true;
+	will_use_vertex_constraint = false;
+	will_preserve_boundaries = true;
+	will_preserve_mesh_quality = true;
+	will_constrain_boundaries = true;
+	boundary_constraint_weight = 1.0;
+	will_weight_by_area = false;
+	placement_policy = 1;
+	pair_selection_tolerance = 0.0;
+	qslim_run();
+	ReplaceM(m);
+    printf("Simplification: %d / %lu\n", face_target, m.Faces.size());
+    //updateDisplayMesh(m);
 }
 
 int main () {
@@ -143,6 +178,8 @@ int main () {
 	// load the mesh using assimp
 
 	assert (load_mesh (MESH_FILE, &objVAO, &ObjPointCount));
+	Mesh m;
+    callQSlim(m);
 	GLuint shader_programme = create_programme_from_files (
 		VERTEX_SHADER_FILE, FRAGMENT_SHADER_FILE
 	);
@@ -170,24 +207,6 @@ int main () {
 		glfwSwapBuffers (g_window);
 	}
 	
-	Mesh m;
-	PlyManager::ReadFile(m,"D:\\VTKproj\\sample.ply");
-	InitM0(m);
-	qslim_init();
-	face_target = 2*m.Faces.size()/3;
-	error_tolerance = HUGE;
-	will_use_plane_constraint = true;
-	will_use_vertex_constraint = false;
-	will_preserve_boundaries = true;
-	will_preserve_mesh_quality = true;
-	will_constrain_boundaries = true;
-	boundary_constraint_weight = 1.0;
-	will_weight_by_area = false;
-	placement_policy = 1;
-	pair_selection_tolerance = 0.0;
-	qslim_run();
-	ReplaceM(m);
-	PlyManager::Output(m,"D:\\VTKproj\\sample_deci.ply");
 
 	// close GL context and any other GLFW resources
 	glfwTerminate();

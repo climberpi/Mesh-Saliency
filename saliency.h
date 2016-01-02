@@ -10,12 +10,12 @@
 #include <assimp/scene.h> // collects data
 #include <assimp/postprocess.h> // various extra operations
 #include "lib/maths_funcs.h"
+#include "QSlim.h"
 #include <queue>
 #include <iostream>
 using namespace std;
 
 #define _USE_MATH_DEFINES
-#define oo 88888888.0f
 
 extern GLfloat* normals; // array of vertex normals
 extern GLfloat* meanCurvature;

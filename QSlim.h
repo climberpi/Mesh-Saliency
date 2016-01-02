@@ -7,9 +7,10 @@
 #include <iostream>
 #include <limits.h>
 using namespace std;
-#define M_PI 3.14159265358979323846
+//define M_PI 3.14159265358979323846
 #define FEQ_EPS 1e-6
 #define FEQ_EPS2 1e-12
+#define oo 3.40E+38f
 inline bool FEQ(double a,double b,double eps=FEQ_EPS) { return fabs(a-b)<eps; }
 inline bool FEQ(float a,float b,float eps=FEQ_EPS) { return fabsf(a-b)<eps; }
 #define MIN(a,b) (((a)>(b))?(b):(a))
@@ -402,14 +403,14 @@ public:
 	inline const T& ref(int i) const;
 	inline const T& operator[](int i) const { return data[i]; }
 	inline const T& operator()(int i) const { return ref(i); }
-	inline int length() const { return len; }
-	inline int maxLength() const { return len; }
+	inline int length() const { return this->len; }
+	inline int maxLength() const { return this->len; }
 };
 template<class T>
 inline void array<T>::init(int l)
 {
 	data = new T[l];
-	len = l;
+	this->len = l;
 }
 template<class T>
 inline void array<T>::free()
@@ -435,8 +436,8 @@ inline void array<T>::resize(int l)
 {
 	T *old = data;
 	data = new T[l];
-	data = (T *)memcpy(data,old,MIN(len,l)*sizeof(T));
-	len = l;
+	data = (T *)memcpy(data,old,MIN(this->len,l)*sizeof(T));
+	this->len = l;
 	delete[] old;
 }
 extern Vec3 randomPoint(const Vec3&, const Vec3&);  // on segment
@@ -525,15 +526,15 @@ public:
 	inline int addAll(const buffer<T>& buf);
 	inline void removeDuplicates();
 	inline int length() const { return fill; }
-	inline int maxLength() const { return len; }
+	inline int maxLength() const { return this->len; }
 };
 template<class T>
 inline int buffer<T>::add(const T& t)
 {
-	if( fill == len )
-		resize( len*2 );
+	if( fill == this->len )
+		this->resize( this->len*2 );
 
-	data[fill] = t;
+	this->data[fill] = t;
 
 	return fill++;
 }
@@ -546,7 +547,7 @@ template<class T>
 inline int buffer<T>::find(const T& t)
 {
 	for(int i=0;i<fill;i++)
-		if( data[i] == t )
+		if( this->data[i] == t )
 			return i;
 
 	return -1;
@@ -555,8 +556,8 @@ template<class T>
 inline T buffer<T>::remove(int i)
 {
 	fill--;
-	T temp = data[i];
-	data[i] = data[fill];
+	T temp = this->data[i];
+	this->data[i] = this->data[fill];
 	return temp;
 }
 template<class T>
@@ -574,7 +575,7 @@ inline void buffer<T>::removeDuplicates()
 	{
 		for(int j=i+1; j<fill; )
 		{
-			if( data[j] == data[i] )
+			if( this->data[j] == this->data[i] )
 				remove(j);
 			else
 				j++;
@@ -969,3 +970,4 @@ extern void decimate_init(Model& m, real limit);
 
 
 #endif
+

@@ -456,8 +456,8 @@ real __gfx_hoppe_dist(const Face3& f, const Vec3& v)
 
 void Bounds::reset()
 {
-	min[X] = min[Y] = min[Z] = HUGE;
-	max[X] = max[Y] = max[Z] = -HUGE;
+	min[X] = min[Y] = min[Z] = oo;
+	max[X] = max[Y] = max[Z] = -oo;
 
 	center[X] = center[Y] = center[Z] = 0.0;
 	radius = 0.0;
@@ -728,7 +728,7 @@ int classifyVertex(Vertex *v)
 
 double setup_time, init_time, slim_time, write_time;
 int face_target = 0;
-real error_tolerance = HUGE;
+real error_tolerance = oo;
 bool will_use_plane_constraint = true;
 bool will_use_vertex_constraint = false;
 bool will_preserve_boundaries = false;
@@ -1132,7 +1132,7 @@ public:
 	Vertex *v0, *v1;
 	Vec3 candidate;
 	real cost;
-	pair_info(Vertex *a,Vertex *b) { v0=a; v1=b; cost=HUGE; }
+	pair_info(Vertex *a,Vertex *b) { v0=a; v1=b; cost=oo; }
 	bool isValid() { return v0->isValid() && v1->isValid(); }
 };
 typedef buffer<pair_info *> pair_buffer;
@@ -1274,7 +1274,7 @@ static void do_contract(Model& m, pair_info *pair)
 	{
 		pair_info *p = v1_info.pairs(i);
 
-		Vertex *u;
+		Vertex *u = NULL;
 		if( p->v0 == v1 )      u = p->v1;
 		else if( p->v1 == v1)  u = p->v0;
 		else cerr << "YOW!  This is a bogus pair." << endl;
@@ -1487,3 +1487,4 @@ void decimate_init(Model& m, real limit)
 
 				cout << "  Decimate:  Designated " << pair_count << " pairs." << endl;
 }
+

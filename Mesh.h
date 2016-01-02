@@ -3,6 +3,7 @@
 #define  _CRT_SECURE_NO_WARNINGS
 #include <vector>
 #include <algorithm>
+using namespace std;
 struct Point3d
 {
 public:
@@ -93,12 +94,12 @@ Vector CaculateTriangleNormal(Point3d& p0, Point3d& p1, Point3d& p2)
 class Mesh
 {
 public:
-	std::vector<Point3d> Vertices;
-	std::vector<Triangle> Faces;
-	std::vector<Vector> FaceNormals;
-	std::vector<Vector> VertexNormals;
-	std::vector<std::vector<int>*> AdjacentFacesPerVertex;
-	std::vector<std::vector<int>*> AdjacentVerticesPerVertex;
+	vector<Point3d> Vertices;
+	vector<Triangle> Faces;
+	vector<Vector> FaceNormals;
+	vector<Vector> VertexNormals;
+	vector<vector<int>*> AdjacentFacesPerVertex;
+	vector<vector<int>*> AdjacentVerticesPerVertex;
 	Mesh()
 	{
 	}
@@ -141,7 +142,7 @@ public:
 			float sumx = 0;
 			float sumy = 0;
 			float sumz = 0;
-			std::vector<int>& tlist = *(AdjacentFacesPerVertex[i]);
+			vector<int>& tlist = *(AdjacentFacesPerVertex[i]);
 			if(tlist.size()!=0)
 			{
 				for (size_t j = 0; i < tlist.size(); j++)
@@ -163,16 +164,16 @@ public:
 		AdjacentFacesPerVertex.reserve(Vertices.size());
 		for (size_t i = 0; i < Vertices.size(); i++)
 		{
-			std::vector<int>* list=new std::vector<int>();
+			vector<int>* list=new vector<int>();
 			list->reserve(4);
 			AdjacentFacesPerVertex.push_back(list);
 		}
 		for (size_t i = 0; i < Faces.size(); i++)
 		{
 			Triangle& t = Faces[i];
-			std::vector<int> *t0list= AdjacentFacesPerVertex[t.P0Index];
-			std::vector<int> *t1list= AdjacentFacesPerVertex[t.P1Index];
-			std::vector<int> *t2list= AdjacentFacesPerVertex[t.P2Index];
+			vector<int> *t0list= AdjacentFacesPerVertex[t.P0Index];
+			vector<int> *t1list= AdjacentFacesPerVertex[t.P1Index];
+			vector<int> *t2list= AdjacentFacesPerVertex[t.P2Index];
 			t0list->push_back(i);
 			t1list->push_back(i);
 			t2list->push_back(i);
@@ -183,27 +184,27 @@ public:
 		AdjacentVerticesPerVertex.reserve(Vertices.size());
 		for (size_t i = 0; i < Vertices.size(); i++)
 		{
-			std::vector<int>* list=new std::vector<int>();
+			vector<int>* list=new vector<int>();
 			list->reserve(4);
 			AdjacentVerticesPerVertex.push_back(list);
 		}
 		for (size_t i = 0; i < Faces.size(); i++)
 		{
 			Triangle &t = Faces[i];
-			std::vector<int> *p0list= AdjacentVerticesPerVertex[t.P0Index];
-			std::vector<int> *p1list= AdjacentVerticesPerVertex[t.P1Index];
-			std::vector<int> *p2list= AdjacentVerticesPerVertex[t.P2Index];
-			if (std::find(p0list->begin(), p0list->end(), t.P1Index)==p0list->end())
+			vector<int> *p0list= AdjacentVerticesPerVertex[t.P0Index];
+			vector<int> *p1list= AdjacentVerticesPerVertex[t.P1Index];
+			vector<int> *p2list= AdjacentVerticesPerVertex[t.P2Index];
+			if (find(p0list->begin(), p0list->end(), t.P1Index)==p0list->end())
 				p0list->push_back(t.P1Index);
-			if (std::find(p0list->begin(), p0list->end(), t.P2Index)==p0list->end())
+			if (find(p0list->begin(), p0list->end(), t.P2Index)==p0list->end())
 				p0list->push_back(t.P2Index);
-			if (std::find(p1list->begin(), p1list->end(), t.P0Index)==p1list->end())
+			if (find(p1list->begin(), p1list->end(), t.P0Index)==p1list->end())
 				p1list->push_back(t.P0Index);
-			if (std::find(p1list->begin(), p1list->end(), t.P2Index)==p1list->end())
+			if (find(p1list->begin(), p1list->end(), t.P2Index)==p1list->end())
 				p1list->push_back(t.P2Index);
-			if (std::find(p2list->begin(), p2list->end(), t.P0Index)==p2list->end())
+			if (find(p2list->begin(), p2list->end(), t.P0Index)==p2list->end())
 				p2list->push_back(t.P0Index);
-			if (std::find(p2list->begin(), p2list->end(), t.P1Index)==p2list->end())
+			if (find(p2list->begin(), p2list->end(), t.P1Index)==p2list->end())
 				p2list->push_back(t.P1Index);
 		}
 	}
@@ -219,7 +220,7 @@ public:
 				float xav = 0;
 				float yav = 0;
 				float zav = 0;
-				std::vector<int>& adjlist =*(AdjacentVerticesPerVertex[i]);
+				vector<int>& adjlist =*(AdjacentVerticesPerVertex[i]);
 				size_t adjcount=adjlist.size();
 				if(adjcount==0)
 					continue;
@@ -246,6 +247,7 @@ public:
 		delete[] tempPos;
 	}
 };
+/*
 class PlyManager
 {
 public:
@@ -316,4 +318,5 @@ void PlyManager::Output(Mesh& mesh,const char* filename)
 	}
 	fclose(nfile);
 }
+*/
 #endif

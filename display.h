@@ -12,13 +12,13 @@
 #include <stdio.h>
 #include "lib/maths_funcs.h"
 #include "lib/gl_utils.h"
+#include "QSlim.h"
 
 #define _USE_MATH_DEFINES
 #define GL_LOG_FILE "gl.log"
 #define VERTEX_SHADER_FILE "shader/test_vs.glsl"
 #define FRAGMENT_SHADER_FILE "shader/test_fs.glsl"
-#define MESH_FILE "object/gargoyle.obj"
-#define oo 88888888.0f
+#define MESH_FILE "object/cow.obj"
 
 extern float fMin(float x, float y);
 extern float fMax(float x, float y);
