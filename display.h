@@ -9,16 +9,14 @@
 #include <GLFW/glfw3.h> // GLFW helper library
 #include <math.h>
 #include <assert.h>
-#include <stdio.h>
 #include "lib/maths_funcs.h"
 #include "lib/gl_utils.h"
-#include "QSlim.h"
 
 #define _USE_MATH_DEFINES
 #define GL_LOG_FILE "gl.log"
 #define VERTEX_SHADER_FILE "shader/test_vs.glsl"
 #define FRAGMENT_SHADER_FILE "shader/test_fs.glsl"
-#define MESH_FILE "object/cow.obj"
+#define oo 88888888.0f
 
 extern float fMin(float x, float y);
 extern float fMax(float x, float y);
@@ -26,12 +24,8 @@ extern float fMax(float x, float y);
 extern GLfloat* normals; // array of vertex normals
 extern GLfloat* meanCurvature;
 extern GLfloat* smoothSaliency;
-extern GLfloat* points;
-extern GLfloat* simplifiedPoints;
-extern GLfloat* simplifiedNormals;
 
 extern int vertexCnt;
-extern int simplifiedVertexCnt;
 
 extern GLuint objVAO;
 extern int ObjPointCount;
@@ -66,4 +60,4 @@ inline void updateView();
 
 void keyBoardEvent(double elapsed_seconds);
 
-void mouseEventHandler(GLFWwindow* window, double xNow, double yNow);
+void glfw_mouse_pos_callback(GLFWwindow* window, double xNow, double yNow);

@@ -25,7 +25,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     glGenVertexArrays (1, vao);
 	glBindVertexArray (*vao);
 	
-	points = NULL; // array of vertex points
+	GLfloat* points = NULL; // array of vertex points
     if (!mesh->HasPositions()) {
         fprintf(stderr, "ERROR: mesh %s don't have vertex data!\n", file_name);
         return false;
@@ -34,8 +34,8 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     float xMin = oo, yMin = oo, zMin = oo;
     float xMax = -oo, yMax = -oo, zMax = -oo;
     // Get the mesh's vertecies
-    points = (GLfloat*)malloc (vertexCnt * 3 * sizeof (GLfloat));
-    for (int i = 0; i < vertexCnt; i++) {
+    points = (GLfloat*)malloc (*point_count * 3 * sizeof (GLfloat));
+    for (int i = 0; i < *point_count; i++) {
         const aiVector3D* vp = &(mesh->mVertices[i]);
         points[i * 3] = (GLfloat)vp->x;
         points[i * 3 + 1] = (GLfloat)vp->y;
@@ -46,7 +46,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     }
 
     // Calculate the mesh's normal
-    normals = (GLfloat*)malloc(vertexCnt * 3 * sizeof(GLfloat));
+    normals = (GLfloat*)malloc(*point_count * 3 * sizeof(GLfloat));
     for(int i = 0; i < mesh->mNumFaces; i++) {
         int idx[3];
         for(int k = 0; k < 3; k++)
@@ -58,15 +58,15 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         // vectors
         vec3 faceVec1 = vec3(v2->x - v1->x, v2->y - v1->y, v2->z - v1->z);
         vec3 faceVec2 = vec3(v3->x - v2->x, v3->y - v2->y, v3->z - v2->z);
-        vec3 crossProd = cross(faceVec1, faceVec2);
         for(int k = 0; k < 3; k++) {
+            vec3 crossProd = cross(faceVec1, faceVec2);
             normals[idx[k]*3+0] += (GLfloat)crossProd.v[0],
             normals[idx[k]*3+1] += (GLfloat)crossProd.v[1],
             normals[idx[k]*3+2] += (GLfloat)crossProd.v[2];
          }
     }
 
-    for(int i = 0; i < vertexCnt; i++) {
+    for(int i = 0; i < *point_count; i++) {
         float norm = 0.0f;
         for(int k = 0; k < 3; k++)
             norm += normals[i*3+k]*normals[i*3+k];
@@ -77,9 +77,9 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     // Calculate each vertecies' shape operator
     mat3* shapeOperators = NULL;
     float* vertexArea = NULL;
-    shapeOperators = (mat3*)malloc(vertexCnt * sizeof(mat3));
-    vertexArea = (float*)malloc(vertexCnt * sizeof(float));
-    for(int i = 0; i < vertexCnt ; i++) {
+    shapeOperators = (mat3*)malloc(*point_count * sizeof(mat3));
+    vertexArea = (float*)malloc(*point_count * sizeof(float));
+    for(int i = 0; i < *point_count; i++) {
         vertexArea[i] = 0.0f;
         for(int j = 0; j < 9; j++)
             shapeOperators[i].m[j] = 0.0f;
@@ -131,15 +131,15 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         }
     }
 
-    for(int i = 0; i < vertexCnt; i++) {
+    for(int i = 0; i < *point_count; i++) {
         shapeOperators[i] = shapeOperators[i] * (1.0f/vertexArea[i]);// * 10000000.0f;
         //print(shapeOperators[i]);
     }
     free(vertexArea);
 
     // Diagonalize the shape operator, and get the mean curvature
-    meanCurvature = (float*)malloc(vertexCnt * sizeof(float));
-    for(int k = 0; k < vertexCnt; k++) {
+    meanCurvature = (float*)malloc(*point_count * sizeof(float));
+    for(int k = 0; k < *point_count; k++) {
         vec3 E1 = vec3(1.0f, 0.0f, 0.0f);
         vec3 Nk = vec3(normals[k*3], normals[k*3+1], normals[k*3+2]);
         bool isMinus = get_squared_dist(E1, Nk) > get_squared_dist(E1 * (-1.0f), Nk);
@@ -161,8 +161,8 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     int* first = NULL;
     int* next = NULL;
     int* incidentVertex = NULL;
-    first = (int*)malloc(vertexCnt * sizeof(int));
-    for(int i = 0; i < vertexCnt; i++)
+    first = (int*)malloc(*point_count * sizeof(int));
+    for(int i = 0; i < *point_count; i++)
         first[i] = -1;
     next = (int*)malloc(mesh->mNumFaces * 6 * sizeof(int));
     incidentVertex = (int*)malloc(mesh->mNumFaces * 6 * sizeof(int));
@@ -180,7 +180,6 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         }
     }
     
-    printf("BFS 1\n");
     // Calculate the mesh saliency by BFS
     float diagonalLength = sqrt((xMax-xMin)*(xMax-xMin) + (yMax-yMin)*(yMax-yMin) + (zMax-zMin)*(zMax-zMin));
     float sigma = 0.003 * diagonalLength;
@@ -188,16 +187,16 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     float maxSaliency[7];
     for(int i = 2; i <= 6; i++) {
         saliency[i] = NULL;;
-        saliency[i] = (float*)malloc(vertexCnt * sizeof(float));
+        saliency[i] = (float*)malloc(*point_count * sizeof(float));
         maxSaliency[i] = -oo;
     }
 
     // Labeled the vertecies whether covered or not.
     bool* used = NULL;
-    used = (bool*)malloc(vertexCnt * sizeof(bool));
-    for(int k = 0; k < vertexCnt; k++) {
-        if(k%1000 == 0)
-            printf("#%d#\n", k);
+    used = (bool*)malloc(*point_count * sizeof(bool));
+    for(int k = 0; k < *point_count; k++) {
+        if(k % 3000 == 0)
+            printf("First BFS: %d/%d\n", k, *point_count);
         // Initialize the saliency and its local counter.
         for(int i = 2; i <= 6; i++)
             saliency[i][k] = 0.0f;
@@ -210,7 +209,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         aiVector3D* aiVec = &(mesh->mVertices[k]);
         vec3 vVec = vec3(aiVec->x, aiVec->y, aiVec->z);
         // Initialize the queue to find neighbourhood.
-        for(int i = 0; i < vertexCnt; i++)
+        for(int i = 0; i < *point_count; i++)
             used[i] = false;
         queue<int> Q;
         Q.push(k);
@@ -256,12 +255,11 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         }
     }
 
-    printf("BFS 2\n");
     // Second BFS and get the non-linear normailization of suppressian's saliency.
-    smoothSaliency = (float*)malloc(vertexCnt * sizeof(float));
-    for(int k = 0; k < vertexCnt; k++) {
-        if(k%1000 == 0)
-            printf("[%d]\n", k);
+    smoothSaliency = (float*)malloc(*point_count * sizeof(float));
+    for(int k = 0; k < *point_count; k++) {
+        if(k % 3000 == 0)
+            printf("Second BFS: %d/%d\n", k, *point_count);
         smoothSaliency[k] = 0.0f;
         float localMaxSaliency[7];//, localCntSaliency[7];
         for(int i = 2; i <= 6; i++)
@@ -270,7 +268,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         aiVector3D* aiVec = &(mesh->mVertices[k]);
         vec3 vVec = vec3(aiVec->x, aiVec->y, aiVec->z);
         // Initialize the queue to find neighbourhood.
-        for(int i = 0; i < vertexCnt; i++)
+        for(int i = 0; i < *point_count; i++)
             used[i] = false;
         queue<int> Q;
         Q.push(k);
@@ -312,16 +310,15 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
     free(incidentVertex);
     for(int i = 2; i <= 6; i++)
         free(saliency[i]);
-    
-	// Copy all vertecies and normal vertors in mesh data into VBOs
-    /*
+	
+	// Copy all vertecies in mesh data into VBOs
     {
         GLuint vbo;
         glGenBuffers (1, &vbo);
         glBindBuffer (GL_ARRAY_BUFFER, vbo);
         glBufferData (
             GL_ARRAY_BUFFER,
-            3 * vertexCnt * sizeof (GLfloat),
+            3 * *point_count * sizeof (GLfloat),
             points,
             GL_STATIC_DRAW
         );
@@ -329,10 +326,9 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
         glEnableVertexAttribArray (0);
         free (points);
     }
-    */
 
     // Copy all normal vectors in mesh data into VBOs
-    updateDisplayType(1);
+    updateDisplayType(2);
 	aiReleaseImport (scene);
 	printf ("mesh loaded\n");
 	
