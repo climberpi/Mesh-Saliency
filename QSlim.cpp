@@ -543,8 +543,10 @@ void Vertex::unlinkEdge(Edge *e)
 {
 	int index = edge_uses.find(e);
 	edge_uses.remove(index);
-	if( edge_uses.length() <= 0 )
+	if( edge_uses.length() <= 0 ) {
+        printf("Kill in unlinkEdge: %d\n", uniqID);
 		kill();
+    }
 }
 void Vertex::remapTo(Vertex *v)
 {
@@ -554,6 +556,9 @@ void Vertex::remapTo(Vertex *v)
 		{
 			edge_uses(i)->remapEndpoint(this, v);
 		}
+        real* data1 = raw();
+        real* data2 = v->raw();
+        printf("Kill in remapTo: %d v1=(%f, %f, %f)[%d] v2=(%f, %f, %f)[%d]\n", uniqID, data1[0], data1[1], data1[2], uniqID, data2[0], data2[1], data2[2], v->uniqID);
 		kill();
 	}
 }
@@ -585,6 +590,7 @@ void Edge::kill()
 {
 	if( isValid() )
 	{
+        printf("# Kill Edge [%d, %d]\n", org()->uniqID, dest()->uniqID);
 		org()->unlinkEdge(this);
 		dest()->unlinkEdge(sym());
 		markInvalid();
@@ -624,7 +630,7 @@ void Edge::remapEndpoint(Vertex *from, Vertex *to)
 	else if( dest()==from )
 	{
 		this->twin->v1=NULL;
-		twin->v1 = to;
+		this->twin->v1 = to;
 		to->linkEdge(twin);
 	}
 	else
@@ -649,6 +655,7 @@ void Face::kill()
 {
 	if( isValid() )
 	{
+        printf("Face Killing: (%d, %d) (%d, %d) (%d, %d)\n", edge(0)->org()->uniqID, edge(0)->dest()->uniqID, edge(1)->org()->uniqID, edge(1)->dest()->uniqID, edge(2)->org()->uniqID, edge(2)->dest()->uniqID);
 		if( edge(0)->isValid() )
 			edge(0)->unlinkFace(this);
 
@@ -787,6 +794,7 @@ Vertex *Model::newVertex(real x, real y, real z)
 {
 	Vertex *v = new Vertex(x, y, z);
 	v->uniqID = vertices.add(v);
+    printf("Adding new: [%d](%f, %f, %f)\n", v->uniqID, x, y, z);
 	validVertCount++;
 
 	return v;
@@ -851,7 +859,10 @@ void Model::killFace(Face *f)
 }
 void Model::reshapeVertex(Vertex *v, real x, real y, real z)
 {
+    real *data = v->raw();
+    printf("(%f, %f, %f)\n", data[0], data[1], data[2]);
 	v->set(x, y, z);
+    printf("#(%f, %f, %f)\n", data[0], data[1], data[2]);
 }
 void Model::remapVertex(Vertex *from, Vertex *to)
 {
@@ -862,6 +873,7 @@ void Model::maybeFixFace(Face *F)
 	Vertex *v0=F->vertex(0); Vertex *v1=F->vertex(1); Vertex *v2=F->vertex(2);
 	Edge *e0 = F->edge(0); Edge *e1 = F->edge(1); Edge *e2 = F->edge(2);
 
+    printf("maybeFixFace %d, %d, %d\n", v0->uniqID, v1->uniqID, v2->uniqID);
 	bool a=(v0 == v1),  b=(v0 == v2),  c=(v1 == v2);
 
 	if( a && c )
@@ -926,7 +938,10 @@ void Model::contract(Vertex *v1, Vertex *v2, const Vec3& to,face_buffer& changed
 {
 	contractionRegion(v1, v2, changed);
 	reshapeVertex(v1, to[X], to[Y], to[Z]);
+    real* data = v1->raw();
+    //printf("[%f, %f, %f]\n", to[X], to[Y], to[Z]);
 	v2->remapTo(v1);
+    printf("##(%f, %f, %f) %d %d\n", data[0], data[1], data[2], v1->uniqID, v2->uniqID);
 	removeDegeneracy(changed);
 }
 
@@ -1324,7 +1339,12 @@ void decimate_contract(Model& m)
 		delete_pair(pair);
 	}
 
+    //Vertex *v0 = pair->v0, *v1 = pair->v1;
+    real *v0 = pair->v0->raw(), *v1 = pair->v1->raw();
+    //printf("(%f, %f, %f) (%f, %f, %f)\n", v0[0], v0[1], v0[2], v1[0], v1[1], v1[2]);
 	do_contract(m, pair);
+    //v0 = pair->v0->raw();
+    //printf("##(%f, %f, %f)\n", v0[0], v0[1], v0[2]);
 
 	//if( logfile && (selected_output&OUTPUT_COST) )
 	//	*logfile << "#$cost " << m.validFaceCount << " "

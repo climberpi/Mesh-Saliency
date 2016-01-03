@@ -57,7 +57,7 @@ void updateDisplayType(int type) {
         colors = (float*)malloc(vertexCntHere * 3 * sizeof(float));
         switch(type) {
             // Normals mode
-            case 1: case 4:{
+            case 1: {
                         for(int i = 0; i < vertexCntHere; i++)
                             colors[3*i+0] = normals[3*i+0],
                             colors[3*i+1] = normals[3*i+1],
@@ -80,7 +80,7 @@ void updateDisplayType(int type) {
                     }
             // Mesh saliency mode
             case 3: {
-                        float xMin = oo, xMax = -oo;
+                         float xMin = oo, xMax = -oo;
                         for(int i = 0; i < vertexCntHere; i++)
                             xMin = fMin(xMin, fabs(smoothSaliency[i])),
                             xMax = fMax(xMax, fabs(smoothSaliency[i]));
@@ -90,6 +90,13 @@ void updateDisplayType(int type) {
                                     / (log(1e-8+xMax)-log(1e-8+xMin));
                             getYUVtoRGB(smoothSaliency[i]>0, Y, 255.0f, 255.0f, colors[3*i], colors[3*i+1], colors[3*i+2]);
                         }
+                        break;
+                    }
+            case 4: {
+                        for(int i = 0; i < vertexCntHere; i++)
+                            colors[3*i+0] = simplifiedNormals[3*i+0],
+                            colors[3*i+1] = simplifiedNormals[3*i+1],
+                            colors[3*i+2] = simplifiedNormals[3*i+2];
                         break;
                     }
         }

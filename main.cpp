@@ -92,7 +92,7 @@ static void qslim_init() {
 
 static void qslim_run() {
     decimate_init(M0, pair_selection_tolerance);
-    while( M0.validFaceCount > face_target&& decimate_min_error() < error_tolerance )
+    while( M0.validFaceCount > face_target && decimate_min_error() < error_tolerance )
         //printf("[%d] %d\n", face_target, M0.validFaceCount),
 		decimate_contract(M0);
 }
@@ -125,57 +125,75 @@ bool loadMeshQSlim(const char* fileName, Mesh& m) {
     return true;
 }
 
-static void ReplaceM(Mesh& m) {
+static void ReplaceM(Mesh& m)
+{
+    vector<Point3d> vertexNull;
+    vector<Triangle> faceNull;
+	m.Vertices.swap(vertexNull);
+	m.Faces.swap(faceNull);
+	m.Vertices.reserve(M0.vertCount());
+	m.Faces.reserve(M0.faceCount());
+    printf("{%d, %d} (%d, %d)\n", M0.vertCount(), M0.faceCount(), m.Vertices.size(), m.Faces.size());
+	int* map=new int[M0.vertCount()];
+	for(int i=0;i<M0.vertCount();i++)
+		map[i]=-1;
+	for(int i=0;i<M0.vertCount();i++) {
+		 	real* data=M0.vertex(i)->raw();
+            printf("[%f, %f, %f] %d\n", data[0], data[1], data[2], M0.vertex(i)->uniqID);
+		if(M0.vertex(i)->isValid()) {
+			Point3d p((float)data[0],(float)data[1],(float)data[2]);
+			map[i]=m.AddVertex(p);
+		}
+	}
+	for(int i=0;i<M0.faceCount();i++) {
+		if(M0.face(i)->isValid()) {
+			Vertex* v0= M0.face(i)->vertex(0);
+			Vertex* v1= M0.face(i)->vertex(1);
+			Vertex* v2= M0.face(i)->vertex(2);
+			Triangle t(map[v0->uniqID],map[v1->uniqID],map[v2->uniqID]);
+ 			m.AddFace(t);
+ 		}
+	}
+	delete[] map;
+    printf("{%d, %d} (%d, %d)\n", M0.vertCount(), M0.faceCount(), m.Vertices.size(), m.Faces.size());
+
+
     if(simplifiedPoints != NULL)
         free(simplifiedPoints);
     if(simplifiedNormals != NULL)
         free(simplifiedNormals);
-    simplifiedVertexCnt = M0.vertCount();
-    int simplifiedFaceCnt = M0.faceCount();
+    simplifiedVertexCnt = m.Vertices.size();
+    int simplifiedFaceCnt = m.Faces.size();
     simplifiedPoints = (GLfloat*)malloc(simplifiedVertexCnt * 3 * sizeof(GLfloat));
     simplifiedNormals = (GLfloat*)malloc(simplifiedVertexCnt * 3 * sizeof(GLfloat));
+    printf("<%d, %d>\n", simplifiedVertexCnt, simplifiedFaceCnt);
 
-    vector<Point3d> newVertices;
-	m.Vertices.swap(newVertices);
-    vector<Triangle> newFaces;
-	m.Faces.swap(newFaces);
-	m.Vertices.reserve(M0.vertCount());
-	m.Faces.reserve(M0.faceCount());
-	int* map=new int[M0.vertCount()];
-	for(int i = 0; i < simplifiedVertexCnt; i++)
-		map[i] = -1;
     // Get the simplified mesh's vertecies
-	for(int i = 0; i < simplifiedVertexCnt; i++) 
-		if(M0.vertex(i)->isValid()) {
-			real* data = M0.vertex(i)->raw();
-			Point3d p((float)data[0], (float)data[1], (float)data[2]);
-			map[i] = m.AddVertex(p);
-            simplifiedPoints[i*3+0] = (GLfloat)data[0];
-            simplifiedPoints[i*3+1] = (GLfloat)data[1];
-            simplifiedPoints[i*3+2] = (GLfloat)data[2];
-		}
+	for(int i = 0; i < vertexCnt; i++) {
+        Point3d* vp = &m.Vertices[i];
+        simplifiedPoints[i*3+0] = (GLfloat)vp->X;
+        simplifiedPoints[i*3+1] = (GLfloat)vp->Y;
+        simplifiedPoints[i*3+2] = (GLfloat)vp->Z;
+	}
     // Calculate the simplified mesh's normal
-	for(int i = 0; i < simplifiedFaceCnt; i++)
-		if(M0.face(i)->isValid()) {
-			Vertex* v0 = M0.face(i)->vertex(0);
-			Vertex* v1 = M0.face(i)->vertex(1);
-			Vertex* v2 = M0.face(i)->vertex(2);
-            int idx[3];
-            idx[0] = map[v0->uniqID],
-            idx[1] = map[v1->uniqID],
-            idx[2] = map[v2->uniqID];
-			Triangle t(idx[0], idx[1], idx[2]);
-			m.AddFace(t);
+	for(int i = 0; i < simplifiedFaceCnt; i++) {
+        int idx[3];
+        idx[0] = m.Faces[i].P0Index;
+        idx[1] = m.Faces[i].P1Index;
+        idx[2] = m.Faces[i].P2Index;
+        Point3d* v1 = &m.Vertices[idx[0]];
+        Point3d* v2 = &m.Vertices[idx[1]];
+        Point3d* v3 = &m.Vertices[idx[2]];
 
-            vec3 faceVec1 = vec3(&v1[0] - &v0[0], &v1[1] - &v0[1], &v1[2] - &v0[2]);
-            vec3 faceVec2 = vec3(&v2[0] - &v1[0], &v2[1] - &v1[1], &v2[2] - &v1[2]);
-            vec3 crossProd = cross(faceVec1, faceVec2);
-            for(int k = 0; k < 3; k++) {
-                simplifiedNormals[idx[k]*3+0] += (GLfloat)crossProd.v[0];
-                simplifiedNormals[idx[k]*3+1] += (GLfloat)crossProd.v[1];
-                simplifiedNormals[idx[k]*3+2] += (GLfloat)crossProd.v[2];
-            }
-		}
+        vec3 faceVec1 = vec3(v2->X - v1->X, v2->Y - v1->Y, v2->Z - v1->Z);
+        vec3 faceVec2 = vec3(v3->X - v2->X, v3->Y - v2->Y, v3->Z - v2->Z);
+        vec3 crossProd = cross(faceVec1, faceVec2);
+        for(int k = 0; k < 3; k++) {
+            simplifiedNormals[idx[k]*3+0] += (GLfloat)crossProd.v[0];
+            simplifiedNormals[idx[k]*3+1] += (GLfloat)crossProd.v[1];
+            simplifiedNormals[idx[k]*3+2] += (GLfloat)crossProd.v[2];
+        }
+	}
 
     for(int i = 0; i < simplifiedVertexCnt; i++) {
         float norm = 0.0f;
@@ -184,7 +202,6 @@ static void ReplaceM(Mesh& m) {
         for(int k = 0; k < 3; k++)
             simplifiedNormals[i*3+k] /= sqrt(norm);
     }
-	delete[] map;
 }
 
 void callQSlim(Mesh& m) {
@@ -194,13 +211,13 @@ void callQSlim(Mesh& m) {
     int originalFaceCnt = m.Faces.size();
 	face_target = (int)(1.0f*m.Faces.size()*ratio/100.0f);
 	error_tolerance = oo;
-	will_use_plane_constraint = true;
-	will_use_vertex_constraint = false;
+	will_use_plane_constraint = false;
+	will_use_vertex_constraint = true;
 	will_preserve_boundaries = true;
 	will_preserve_mesh_quality = true;
 	will_constrain_boundaries = true;
 	boundary_constraint_weight = 1.0;
-	will_weight_by_area = false;
+	will_weight_by_area = true;
 	placement_policy = 1;
 	pair_selection_tolerance = 0.0;
 	qslim_run();
@@ -209,6 +226,7 @@ void callQSlim(Mesh& m) {
 }
 
 int main () {
+    //freopen("1.txt", "w", stdout);
 	initializeOpenGL();
     glfwSetCursorPosCallback(g_window, mouseEventHandler);
 	// load the mesh using assimp
