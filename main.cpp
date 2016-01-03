@@ -138,7 +138,7 @@ static void ReplaceM(Mesh& m)
 	for(int i=0;i<M0.vertCount();i++)
 		map[i]=-1;
 	for(int i=0;i<M0.vertCount();i++) {
-		 	real* data=M0.vertex(i)->raw();
+		 	float* data=M0.vertex(i)->raw();
             printf("[%f, %f, %f] %d\n", data[0], data[1], data[2], M0.vertex(i)->uniqID);
 		if(M0.vertex(i)->isValid()) {
 			Point3d p((float)data[0],(float)data[1],(float)data[2]);

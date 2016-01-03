@@ -15,7 +15,7 @@ inline bool FEQ(double a,double b,double eps=FEQ_EPS) { return fabs(a-b)<eps; }
 inline bool FEQ(float a,float b,float eps=FEQ_EPS) { return fabsf(a-b)<eps; }
 #define MIN(a,b) (((a)>(b))?(b):(a))
 #define MAX(a,b) (((a)>(b))?(a):(b))
-typedef double real;
+//typedef double float;
 enum Axis {X=0, Y=1, Z=2, W=3};
 template<class T>
 inline T min(T a, T b) { return (a < b)?a:b; }
@@ -23,33 +23,33 @@ template<class T>
 inline T max(T a, T b) { return (a > b)?a:b; }
 class Vec2 {
 private:
-	real elt[2];
+	float elt[2];
 protected:
 	inline void copy(const Vec2& v);
 public:
-	Vec2(real x=0, real y=0) { elt[0]=x; elt[1]=y; }
+	Vec2(float x=0, float y=0) { elt[0]=x; elt[1]=y; }
 	Vec2(const Vec2& v) { copy(v); }
-	Vec2(const real *v) { elt[0]=v[0]; elt[1]=v[1]; }
-	real& operator()(int i)       { return elt[i]; }
-	real  operator()(int i) const { return elt[i]; }
-	real& operator[](int i)       { return elt[i]; }
-	real  operator[](int i) const { return elt[i]; }
-	real *raw()             { return elt; }
-	const real *raw() const { return elt; }
+	Vec2(const float *v) { elt[0]=v[0]; elt[1]=v[1]; }
+	float& operator()(int i)       { return elt[i]; }
+	float  operator()(int i) const { return elt[i]; }
+	float& operator[](int i)       { return elt[i]; }
+	float  operator[](int i) const { return elt[i]; }
+	float *raw()             { return elt; }
+	const float *raw() const { return elt; }
 	inline bool operator==(const Vec2& v) const;
 	inline bool operator!=(const Vec2& v) const;
-	inline void set(real x, real y) { elt[0]=x; elt[1]=y; }
+	inline void set(float x, float y) { elt[0]=x; elt[1]=y; }
 	inline Vec2& operator=(const Vec2& v);
 	inline Vec2& operator+=(const Vec2& v);
 	inline Vec2& operator-=(const Vec2& v);
-	inline Vec2& operator*=(real s);
-	inline Vec2& operator/=(real s);
+	inline Vec2& operator*=(float s);
+	inline Vec2& operator/=(float s);
 	inline Vec2 operator+(const Vec2& v) const;
 	inline Vec2 operator-(const Vec2& v) const;
 	inline Vec2 operator-() const;
-	inline Vec2 operator*(real s) const;
-	inline Vec2 operator/(real s) const;
-	inline real operator*(const Vec2& v) const;
+	inline Vec2 operator*(float s) const;
+	inline Vec2 operator/(float s) const;
+	inline float operator*(const Vec2& v) const;
 };
 inline void Vec2::copy(const Vec2& v)
 {
@@ -57,12 +57,12 @@ inline void Vec2::copy(const Vec2& v)
 }
 inline bool Vec2::operator==(const Vec2& v) const
 {
-	real dx=elt[X]-v[X],  dy=elt[Y]-v[Y];
+	float dx=elt[X]-v[X],  dy=elt[Y]-v[Y];
 	return (dx*dx + dy*dy) < FEQ_EPS2;
 }
 inline bool Vec2::operator!=(const Vec2& v) const
 {
-	real dx=elt[X]-v[X],  dy=elt[Y]-v[Y];
+	float dx=elt[X]-v[X],  dy=elt[Y]-v[Y];
 	return (dx*dx + dy*dy) > FEQ_EPS2;
 }
 inline Vec2& Vec2::operator=(const Vec2& v)
@@ -80,12 +80,12 @@ inline Vec2& Vec2::operator-=(const Vec2& v)
 	elt[0] -= v[0];   elt[1] -= v[1];
 	return *this;
 }
-inline Vec2& Vec2::operator*=(real s)
+inline Vec2& Vec2::operator*=(float s)
 {
 	elt[0] *= s;   elt[1] *= s;
 	return *this;
 }
-inline Vec2& Vec2::operator/=(real s)
+inline Vec2& Vec2::operator/=(float s)
 {
 	elt[0] /= s;   elt[1] /= s;
 	return *this;
@@ -102,25 +102,25 @@ inline Vec2 Vec2::operator-() const
 {
 	return Vec2(-elt[0], -elt[1]);
 }
-inline Vec2 Vec2::operator*(real s) const
+inline Vec2 Vec2::operator*(float s) const
 {
 	return Vec2(elt[0]*s, elt[1]*s);
 }
-inline Vec2 Vec2::operator/(real s) const
+inline Vec2 Vec2::operator/(float s) const
 {
 	return Vec2(elt[0]/s, elt[1]/s);
 }
-inline real Vec2::operator*(const Vec2& v) const
+inline float Vec2::operator*(const Vec2& v) const
 {
 	return elt[0]*v[0] + elt[1]*v[1];
 }
-inline Vec2 operator*(real s, const Vec2& v) { return v*s; }
-inline real norm(const Vec2& v) { return sqrt(v[0]*v[0] + v[1]*v[1]); }
-inline real norm2(const Vec2& v) { return v[0]*v[0] + v[1]*v[1]; }
-inline real length(const Vec2& v) { return norm(v); }
-inline real unitize(Vec2& v)
+inline Vec2 operator*(float s, const Vec2& v) { return v*s; }
+inline float norm(const Vec2& v) { return sqrt(v[0]*v[0] + v[1]*v[1]); }
+inline float norm2(const Vec2& v) { return v[0]*v[0] + v[1]*v[1]; }
+inline float length(const Vec2& v) { return norm(v); }
+inline float unitize(Vec2& v)
 {
-	real l=norm2(v);
+	float l=norm2(v);
 	if( l!=1.0 && l!=0.0 )
 	{
 		l = sqrt(l);
@@ -130,33 +130,33 @@ inline real unitize(Vec2& v)
 }
 class Vec3 {
 private:
-	real elt[3];
+	float elt[3];
 protected:
 	inline void copy(const Vec3& v);
 public:
-	Vec3(real x=0, real y=0, real z=0) { elt[0]=x; elt[1]=y; elt[2]=z; }
+	Vec3(float x=0, float y=0, float z=0) { elt[0]=x; elt[1]=y; elt[2]=z; }
 	Vec3(const Vec3& v) { copy(v); }
-	Vec3(const real *v) { elt[0]=v[0]; elt[1]=v[1]; elt[2]=v[2]; }
-	real& operator()(int i)       { return elt[i]; }
-	real  operator()(int i) const { return elt[i]; }
-	real& operator[](int i)       { return elt[i]; }
+	Vec3(const float *v) { elt[0]=v[0]; elt[1]=v[1]; elt[2]=v[2]; }
+	float& operator()(int i)       { return elt[i]; }
+	float  operator()(int i) const { return elt[i]; }
+	float& operator[](int i)       { return elt[i]; }
 	float  operator[](int i) const { return elt[i]; }
-	real *raw()             { return elt; }
-	const real *raw() const { return elt; }
+	float *raw()             { return elt; }
+	const float *raw() const { return elt; }
 	inline bool operator==(const Vec3& v) const;
 	inline bool operator!=(const Vec3& v) const;
-	inline void set(real x, real y, real z) { elt[0]=x; elt[1]=y; elt[2]=z; }
+	inline void set(float x, float y, float z) { elt[0]=x; elt[1]=y; elt[2]=z; }
 	inline Vec3& operator=(const Vec3& v);
 	inline Vec3& operator+=(const Vec3& v);
 	inline Vec3& operator-=(const Vec3& v);
-	inline Vec3& operator*=(real s);
-	inline Vec3& operator/=(real s);
+	inline Vec3& operator*=(float s);
+	inline Vec3& operator/=(float s);
 	inline Vec3 operator+(const Vec3& v) const;
 	inline Vec3 operator-(const Vec3& v) const;
 	inline Vec3 operator-() const;
-	inline Vec3 operator*(real s) const;
-	inline Vec3 operator/(real s) const;
-	inline real operator*(const Vec3& v) const;
+	inline Vec3 operator*(float s) const;
+	inline Vec3 operator/(float s) const;
+	inline float operator*(const Vec3& v) const;
 	inline Vec3 operator^(const Vec3& v) const;
 };
 inline void Vec3::copy(const Vec3& v)
@@ -165,12 +165,12 @@ inline void Vec3::copy(const Vec3& v)
 }
 inline bool Vec3::operator==(const Vec3& v) const
 {
-	real dx=elt[X]-v[X],  dy=elt[Y]-v[Y],  dz=elt[Z]-v[Z];
+	float dx=elt[X]-v[X],  dy=elt[Y]-v[Y],  dz=elt[Z]-v[Z];
 	return (dx*dx + dy*dy + dz*dz) < FEQ_EPS2;
 }
 inline bool Vec3::operator!=(const Vec3& v) const
 {
-	real dx=elt[X]-v[X],  dy=elt[Y]-v[Y],  dz=elt[Z]-v[Z];
+	float dx=elt[X]-v[X],  dy=elt[Y]-v[Y],  dz=elt[Z]-v[Z];
 	return (dx*dx + dy*dy + dz*dz) > FEQ_EPS2;
 }
 inline Vec3& Vec3::operator=(const Vec3& v)
@@ -188,12 +188,12 @@ inline Vec3& Vec3::operator-=(const Vec3& v)
 	elt[0] -= v[0];   elt[1] -= v[1];   elt[2] -= v[2];
 	return *this;
 }
-inline Vec3& Vec3::operator*=(real s)
+inline Vec3& Vec3::operator*=(float s)
 {
 	elt[0] *= s;   elt[1] *= s;   elt[2] *= s;
 	return *this;
 }
-inline Vec3& Vec3::operator/=(real s)
+inline Vec3& Vec3::operator/=(float s)
 {
 	elt[0] /= s;   elt[1] /= s;   elt[2] /= s;
 	return *this;
@@ -210,15 +210,15 @@ inline Vec3 Vec3::operator-() const
 {
 	return Vec3(-elt[0], -elt[1], -elt[2]);
 }
-inline Vec3 Vec3::operator*(real s) const
+inline Vec3 Vec3::operator*(float s) const
 {
 	return Vec3(elt[0]*s, elt[1]*s, elt[2]*s);
 }
-inline Vec3 Vec3::operator/(real s) const
+inline Vec3 Vec3::operator/(float s) const
 {
 	return Vec3(elt[0]/s, elt[1]/s, elt[2]/s);
 }
-inline real Vec3::operator*(const Vec3& v) const
+inline float Vec3::operator*(const Vec3& v) const
 {
 	return elt[0]*v[0] + elt[1]*v[1] + elt[2]*v[2];
 }
@@ -229,19 +229,19 @@ inline Vec3 Vec3::operator^(const Vec3& v) const
 		elt[0]*v[1] - v[0]*elt[1] );
 	return w;
 }
-inline Vec3 operator*(real s, const Vec3& v) { return v*s; }
-inline real norm(const Vec3& v)
+inline Vec3 operator*(float s, const Vec3& v) { return v*s; }
+inline float norm(const Vec3& v)
 {
 	return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
-inline real norm2(const Vec3& v)
+inline float norm2(const Vec3& v)
 {
 	return v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 }
-inline real length(const Vec3& v) { return norm(v); }
-inline real unitize(Vec3& v)
+inline float length(const Vec3& v) { return norm(v); }
+inline float unitize(Vec3& v)
 {
-	real l=norm2(v);
+	float l=norm2(v);
 	if( l!=1.0 && l!=0.0 )
 	{
 		l = sqrt(l);
@@ -251,38 +251,38 @@ inline real unitize(Vec3& v)
 }
 class Vec4 {
 private:
-	real elt[4];
+	float elt[4];
 protected:
 	inline void copy(const Vec4& v);
 public:
-	Vec4(real x=0, real y=0, real z=0, real w=0) {
+	Vec4(float x=0, float y=0, float z=0, float w=0) {
 		elt[0]=x; elt[1]=y; elt[2]=z; elt[3]=w;
 	}
 	Vec4(const Vec4& v) { copy(v); }
-	Vec4(const Vec3& v,real w) {elt[0]=v[0];elt[1]=v[1];elt[2]=v[2];elt[3]=w;}
-	Vec4(const real *v) { elt[0]=v[0]; elt[1]=v[1]; elt[2]=v[2]; elt[3]=v[3]; }
-	real& operator()(int i)       { return elt[i]; }
-	real  operator()(int i) const { return elt[i]; }
-	real& operator[](int i)             { return elt[i]; }
-	const real& operator[](int i) const { return elt[i]; }
-	real *raw()             { return elt; }
-	const real *raw() const { return elt; }
+	Vec4(const Vec3& v,float w) {elt[0]=v[0];elt[1]=v[1];elt[2]=v[2];elt[3]=w;}
+	Vec4(const float *v) { elt[0]=v[0]; elt[1]=v[1]; elt[2]=v[2]; elt[3]=v[3]; }
+	float& operator()(int i)       { return elt[i]; }
+	float  operator()(int i) const { return elt[i]; }
+	float& operator[](int i)             { return elt[i]; }
+	const float& operator[](int i) const { return elt[i]; }
+	float *raw()             { return elt; }
+	const float *raw() const { return elt; }
 	inline bool operator==(const Vec4&) const;
 	inline bool operator!=(const Vec4&) const;
-	inline void set(real x, real y, real z, real w){
+	inline void set(float x, float y, float z, float w){
 		elt[0]=x; elt[1]=y; elt[2]=z; elt[3]=w;
 	}
 	inline Vec4& operator=(const Vec4& v);
 	inline Vec4& operator+=(const Vec4& v);
 	inline Vec4& operator-=(const Vec4& v);
-	inline Vec4& operator*=(real s);
-	inline Vec4& operator/=(real s);
+	inline Vec4& operator*=(float s);
+	inline Vec4& operator/=(float s);
 	inline Vec4 operator+(const Vec4& v) const;
 	inline Vec4 operator-(const Vec4& v) const;
 	inline Vec4 operator-() const;
-	inline Vec4 operator*(real s) const;
-	inline Vec4 operator/(real s) const;
-	inline real operator*(const Vec4& v) const;
+	inline Vec4 operator*(float s) const;
+	inline Vec4 operator/(float s) const;
+	inline float operator*(const Vec4& v) const;
 };
 inline void Vec4::copy(const Vec4& v)
 {
@@ -290,12 +290,12 @@ inline void Vec4::copy(const Vec4& v)
 }
 inline bool Vec4::operator==(const Vec4& v) const
 {
-	real dx=elt[X]-v[X],  dy=elt[Y]-v[Y],  dz=elt[Z]-v[Z],  dw=elt[W]-v[W];
+	float dx=elt[X]-v[X],  dy=elt[Y]-v[Y],  dz=elt[Z]-v[Z],  dw=elt[W]-v[W];
 	return (dx*dx + dy*dy + dz*dz + dw*dw) < FEQ_EPS2;
 }
 inline bool Vec4::operator!=(const Vec4& v) const
 {
-	real dx=elt[X]-v[X],  dy=elt[Y]-v[Y],  dz=elt[Z]-v[Z],  dw=elt[W]-v[W];
+	float dx=elt[X]-v[X],  dy=elt[Y]-v[Y],  dz=elt[Z]-v[Z],  dw=elt[W]-v[W];
 	return (dx*dx + dy*dy + dz*dz + dw*dw) > FEQ_EPS2;
 }
 inline Vec4& Vec4::operator=(const Vec4& v)
@@ -313,12 +313,12 @@ inline Vec4& Vec4::operator-=(const Vec4& v)
 	elt[0] -= v[0];   elt[1] -= v[1];   elt[2] -= v[2];   elt[3] -= v[3];
 	return *this;
 }
-inline Vec4& Vec4::operator*=(real s)
+inline Vec4& Vec4::operator*=(float s)
 {
 	elt[0] *= s;   elt[1] *= s;   elt[2] *= s;  elt[3] *= s;
 	return *this;
 }
-inline Vec4& Vec4::operator/=(real s)
+inline Vec4& Vec4::operator/=(float s)
 {
 	elt[0] /= s;   elt[1] /= s;   elt[2] /= s;   elt[3] /= s;
 	return *this;
@@ -335,29 +335,29 @@ inline Vec4 Vec4::operator-() const
 {
 	return Vec4(-elt[0], -elt[1], -elt[2], -elt[3]);
 }
-inline Vec4 Vec4::operator*(real s) const
+inline Vec4 Vec4::operator*(float s) const
 {
 	return Vec4(elt[0]*s, elt[1]*s, elt[2]*s, elt[3]*s);
 }
-inline Vec4 Vec4::operator/(real s) const
+inline Vec4 Vec4::operator/(float s) const
 {
 	return Vec4(elt[0]/s, elt[1]/s, elt[2]/s, elt[3]/s);
 }
-inline real Vec4::operator*(const Vec4& v) const
+inline float Vec4::operator*(const Vec4& v) const
 {
 	return elt[0]*v[0] + elt[1]*v[1] + elt[2]*v[2] + elt[3]*v[3];
 }
-inline Vec4 operator*(real s, const Vec4& v) { return v*s; }
+inline Vec4 operator*(float s, const Vec4& v) { return v*s; }
 inline Vec4 cross(const Vec4& a, const Vec4& b, const Vec4& c)
 {
 	Vec4 result;
 
-	real d1 = (b[Z] * c[W]) - (b[W] * c[Z]);
-	real d2 = (b[Y] * c[W]) - (b[W] * c[Y]);
-	real d3 = (b[Y] * c[Z]) - (b[Z] * c[Y]);
-	real d4 = (b[X] * c[W]) - (b[W] * c[X]);
-	real d5 = (b[X] * c[Z]) - (b[Z] * c[X]);
-	real d6 = (b[X] * c[Y]) - (b[Y] * c[X]);
+	float d1 = (b[Z] * c[W]) - (b[W] * c[Z]);
+	float d2 = (b[Y] * c[W]) - (b[W] * c[Y]);
+	float d3 = (b[Y] * c[Z]) - (b[Z] * c[Y]);
+	float d4 = (b[X] * c[W]) - (b[W] * c[X]);
+	float d5 = (b[X] * c[Z]) - (b[Z] * c[X]);
+	float d6 = (b[X] * c[Y]) - (b[Y] * c[X]);
 
 	result[X] = - a[Y] * d1 + a[Z] * d2 - a[W] * d3;
 	result[Y] =   a[X] * d1 - a[Z] * d4 + a[W] * d5;
@@ -366,18 +366,18 @@ inline Vec4 cross(const Vec4& a, const Vec4& b, const Vec4& c)
 
 	return result;
 }
-inline real norm(const Vec4& v)
+inline float norm(const Vec4& v)
 {
 	return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
 }
-inline real norm2(const Vec4& v)
+inline float norm2(const Vec4& v)
 {
 	return v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3];
 }
-inline real length(const Vec4& v) { return norm(v); }
-inline real unitize(Vec4& v)
+inline float length(const Vec4& v) { return norm(v); }
+inline float unitize(Vec4& v)
 {
-	real l=norm2(v);
+	float l=norm2(v);
 	if( l!=1.0 && l!=0.0 )
 	{
 		l = sqrt(l);
@@ -403,14 +403,14 @@ public:
 	inline const T& ref(int i) const;
 	inline const T& operator[](int i) const { return data[i]; }
 	inline const T& operator()(int i) const { return ref(i); }
-	inline int length() const { return this->len; }
-	inline int maxLength() const { return this->len; }
+	inline int length() const { return len; }
+	inline int maxLength() const { return len; }
 };
 template<class T>
 inline void array<T>::init(int l)
 {
 	data = new T[l];
-	this->len = l;
+	len = l;
 }
 template<class T>
 inline void array<T>::free()
@@ -436,20 +436,20 @@ inline void array<T>::resize(int l)
 {
 	T *old = data;
 	data = new T[l];
-	data = (T *)memcpy(data,old,MIN(this->len,l)*sizeof(T));
-	this->len = l;
+	data = (T *)memcpy(data,old,MIN(len,l)*sizeof(T));
+	len = l;
 	delete[] old;
 }
 extern Vec3 randomPoint(const Vec3&, const Vec3&);  // on segment
 extern Vec3 randomPoint(const Vec3&, const Vec3&, const Vec3&); // in triangle
-extern real triangleArea(const Vec3&, const Vec3&, const Vec3&);
-extern real triangleCompactness(const Vec3&, const Vec3&, const Vec3&);
+extern float triangleArea(const Vec3&, const Vec3&, const Vec3&);
+extern float triangleCompactness(const Vec3&, const Vec3&, const Vec3&);
 class Bounds
 {
 public:
 	Vec3 min, max;
 	Vec3 center;
-	real radius;
+	float radius;
 	unsigned int points;
 	Bounds() { reset(); }
 	void reset();
@@ -459,7 +459,7 @@ public:
 class Plane
 {
 	Vec3 n;
-	real d;
+	float d;
 public:
 	Plane() : n(0,0,1) { d=0; } // -- this will define the XY plane
 	Plane(const Vec3& p, const Vec3& q, const Vec3& r) { calcFrom(p,q,r); }
@@ -469,9 +469,9 @@ public:
 	void calcFrom(const array<Vec3>&);
 	bool isValid() const { return n[X]!=0.0 || n[Y]!=0.0 || n[Z]!= 0.0; }
 	void markInvalid() { n[X] = n[Y] = n[Z] = 0.0; }
-	real distTo(const Vec3& p) const { return n*p + d; }
+	float distTo(const Vec3& p) const { return n*p + d; }
 	const Vec3& normal() const { return n; }
-	void coeffs(real *a, real *b, real *c, real *dd) const {
+	void coeffs(float *a, float *b, float *c, float *dd) const {
 		*a=n[X]; *b=n[Y]; *c=n[Z]; *dd=d;
 	}
 	Vec4 coeffs() const { return Vec4(n,d); }
@@ -492,24 +492,24 @@ public:
 	virtual void vertexPos(int i, const Vec3&) = 0; 
 	const Plane& plane() { if(!P.isValid()) recalcPlane();   return P;}
 	void invalidatePlane() { P.markInvalid(); }
-	real distTo(const Vec3& p) const;
-	real area();
+	float distTo(const Vec3& p) const;
+	float area();
 };
-inline real random1()
+inline float random1()
 {
 	//#if defined(WIN32) || defined(GFX_USE_RAND)
-	return (real)rand() / (real)LONG_MAX;
+	return (float)rand() / (float)LONG_MAX;
 	//#else
-	//	return (real)random() / (real)LONG_MAX;
+	//	return (float)random() / (float)LONG_MAX;
 	//#endif
 }
 extern Vec3 randomPoint(const Vec3& v1, const Vec3& v2);
 extern Vec3 randomPoint(const Vec3& v1, const Vec3& v2, const Vec3& v3);
-extern  real triangleArea(const Vec3& v1, const Vec3& v2, const Vec3& v3);
+extern  float triangleArea(const Vec3& v1, const Vec3& v2, const Vec3& v3);
 #define ROOT3 1.732050807568877
 #define FOUR_ROOT3 6.928203230275509
-extern  real triangleCompactness(const Vec3& v1, const Vec3& v2, const Vec3& v3);
-extern real __gfx_hoppe_dist(const Face3& f, const Vec3& v);
+extern  float triangleCompactness(const Vec3& v1, const Vec3& v2, const Vec3& v3);
+extern float __gfx_hoppe_dist(const Face3& f, const Vec3& v);
 #define DOTP(a, b) (a[0] * b[0] + a[1] * b[1] + a[2] * b[2])
 template<class T>
 class buffer : public array<T> {
@@ -659,7 +659,7 @@ class Vertex : public Vec3, public NTaggedPrim
 {
 	edge_buffer edge_uses;
 public:
-	Vertex(real x, real y, real z) : Vec3(x, y, z), edge_uses(6) {
+	Vertex(float x, float y, float z) : Vec3(x, y, z), edge_uses(6) {
 	}
 	void kill();
 	edge_buffer& edgeUses() { return edge_uses; }
@@ -714,37 +714,37 @@ public:
 	static Mat4 identity;
 	static Mat4 zero;
 	static Mat4 unit;
-	static Mat4 trans(real,real,real);
-	static Mat4 scale(real,real,real);
-	static Mat4 xrot(real); //
-	static Mat4 yrot(real); // Arguments are in radians
-	static Mat4 zrot(real); //
+	static Mat4 trans(float,float,float);
+	static Mat4 scale(float,float,float);
+	static Mat4 xrot(float); //
+	static Mat4 yrot(float); // Arguments are in radians
+	static Mat4 zrot(float); //
 	Mat4() { copy(zero); }
 	Mat4(const Vec4& r0,const Vec4& r1,const Vec4& r2,const Vec4& r3)
 	{ row[0]=r0; row[1]=r1; row[2]=r2; row[3]=r3; }
 	Mat4(const Mat4& m) { copy(m); }
-	real& operator()(int i, int j)       { return row[i][j]; }
-	real  operator()(int i, int j) const { return row[i][j]; }
+	float& operator()(int i, int j)       { return row[i][j]; }
+	float  operator()(int i, int j) const { return row[i][j]; }
 	const Vec4& operator[](int i) const { return row[i]; }
 	inline int operator==(const Mat4&);
 	inline Mat4& operator=(const Mat4& m) { copy(m); return *this; }
 	inline Mat4& operator+=(const Mat4& m);
 	inline Mat4& operator-=(const Mat4& m);
-	inline Mat4& operator*=(real s);
-	inline Mat4& operator/=(real s);
+	inline Mat4& operator*=(float s);
+	inline Mat4& operator/=(float s);
 	inline Mat4 operator+(const Mat4& m) const;
 	inline Mat4 operator-(const Mat4& m) const;
 	inline Mat4 operator-() const;
-	inline Mat4 operator*(real s) const;
-	inline Mat4 operator/(real s) const;
+	inline Mat4 operator*(float s) const;
+	inline Mat4 operator/(float s) const;
 	Mat4 operator*(const Mat4& m) const;
 	inline Vec4 operator*(const Vec4& v) const; // [x y z w]
 	inline Vec3 operator*(const Vec3& v) const; // [x y z w]
-	real det() const;
+	float det() const;
 	Mat4 transpose() const;
 	Mat4 adjoint() const;
-	real inverse(Mat4&) const;
-	real cramerInverse(Mat4&) const;
+	float inverse(Mat4&) const;
+	float cramerInverse(Mat4&) const;
 	friend ostream& operator<<(ostream&, const Mat4&);
 	friend istream& operator>>(istream&, Mat4&);
 };
@@ -772,12 +772,12 @@ inline Mat4& Mat4::operator-=(const Mat4& m)
 	row[2] -= m.row[2]; row[3] -= m.row[3];
 	return *this;
 }
-inline Mat4& Mat4::operator*=(real s)
+inline Mat4& Mat4::operator*=(float s)
 {
 	row[0] *= s; row[1] *= s; row[2] *= s; row[3] *= s;
 	return *this;
 }
-inline Mat4& Mat4::operator/=(real s)
+inline Mat4& Mat4::operator/=(float s)
 {
 	row[0] /= s; row[1] /= s; row[2] /= s; row[3] /= s;
 	return *this;
@@ -800,11 +800,11 @@ inline Mat4 Mat4::operator-() const
 {
 	return Mat4(-row[0], -row[1], -row[2], -row[3]);
 }
-inline Mat4 Mat4::operator*(real s) const
+inline Mat4 Mat4::operator*(float s) const
 {
 	return Mat4(row[0]*s, row[1]*s, row[2]*s, row[3]*s);
 }
-inline Mat4 Mat4::operator/(real s) const
+inline Mat4 Mat4::operator/(float s) const
 {
 	return Mat4(row[0]/s, row[1]/s, row[2]/s, row[3]/s);
 }
@@ -815,7 +815,7 @@ inline Vec4 Mat4::operator*(const Vec4& v) const
 inline Vec3 Mat4::operator*(const Vec3& v) const
 {
 	Vec4 u=Vec4(v,1);
-	real w=row[3]*u;
+	float w=row[3]*u;
 
 	if(w==0.0)
 		return Vec3(row[0]*u, row[1]*u, row[2]*u);
@@ -874,14 +874,14 @@ class ProxGrid
 {
 	array3<ProxGrid_Cell> cells;
 	int xdiv, ydiv, zdiv;
-	real cellsize;
-	real cellsize2;
+	float cellsize;
+	float cellsize2;
 	Vec3 min, max;
 	void cell_for_point(const Vec3&, int *i, int *j, int *k);
 	void maybe_collect_points(Vec3 *v, buffer<Vec3 *>& close,
 		ProxGrid_Cell& cell);
 public:
-	ProxGrid(const Vec3& min, const Vec3& max, real dist);
+	ProxGrid(const Vec3& min, const Vec3& max, float dist);
 	~ProxGrid() { cells.free(); }
 	void addPoint(Vec3 *);
 	void removePoint(Vec3 *);
@@ -889,20 +889,20 @@ public:
 };
 
 extern int face_target;
-extern real error_tolerance;
+extern float error_tolerance;
 extern bool will_use_plane_constraint;
 extern bool will_use_vertex_constraint;
 extern bool will_preserve_boundaries;
 extern bool will_preserve_mesh_quality;
 extern bool will_constrain_boundaries;
-extern real boundary_constraint_weight;
+extern float boundary_constraint_weight;
 extern bool will_weight_by_area;
 #define PLACE_ENDPOINTS 0
 #define PLACE_ENDORMID  1
 #define PLACE_LINE      2
 #define PLACE_OPTIMAL   3
 extern int placement_policy;
-extern real pair_selection_tolerance;
+extern float pair_selection_tolerance;
 
 class Model //: public SMF_Model
 {
@@ -927,13 +927,13 @@ public:
 	vert_buffer& allVertices() { return vertices; }
 	edge_buffer& allEdges()    { return edges;    }
 	face_buffer& allFaces()    { return faces;    }
-	Vertex   *newVertex(real x=0.0, real y=0.0, real z=0.0);
+	Vertex   *newVertex(float x=0.0, float y=0.0, float z=0.0);
 	Edge     *newEdge(Vertex *,Vertex *);
 	Face *newFace(Vertex *, Vertex *, Vertex *);
 	void killVertex(Vertex *);
 	void killEdge(Edge *);
 	void killFace(Face *);
-	void reshapeVertex(Vertex *, real, real, real);
+	void reshapeVertex(Vertex *, float, float, float);
 	void remapVertex(Vertex *from, Vertex *to);
 	void contract(Vertex *v1, Vertex *v2, const Vec3& to,face_buffer& changed);
 	void removeDegeneracy(face_buffer& changed);
@@ -945,27 +945,27 @@ public:
 };
 extern Model M0;
 extern Mat4 quadrix_vertex_constraint(const Vec3&);
-extern Mat4 quadrix_plane_constraint(real a, real b, real c, real d);
+extern Mat4 quadrix_plane_constraint(float a, float b, float c, float d);
 extern Mat4 quadrix_plane_constraint(Face& T);
-extern Mat4 quadrix_plane_constraint(const Vec3& n, real);
+extern Mat4 quadrix_plane_constraint(const Vec3& n, float);
 extern Mat4 quadrix_plane_constraint(const Vec3&, const Vec3&, const Vec3&);
-extern real quadrix_evaluate_vertex(const Vec3& v, const Mat4& K);
+extern float quadrix_evaluate_vertex(const Vec3& v, const Mat4& K);
 extern bool check_for_discontinuity(Edge *);
 extern Mat4 quadrix_discontinuity_constraint(Edge *, const Vec3&);
 extern Mat4 quadrix_discontinuity_constraint(Edge *);
 extern bool quadrix_find_local_fit(const Mat4& Q,const Vec3& v1, const Vec3& v2,Vec3& candidate);
 extern bool quadrix_find_line_fit(const Mat4& Q,const Vec3& v1, const Vec3& v2,Vec3& candidate);
 extern bool quadrix_find_best_fit(const Mat4& Q, Vec3& candidate);
-extern real quadrix_pair_target(const Mat4& Q,Vertex *v1,Vertex *v2,Vec3& candidate);
+extern float quadrix_pair_target(const Mat4& Q,Vertex *v1,Vertex *v2,Vec3& candidate);
 
 extern Vertex *decimate_last_v0;
 extern Vertex *decimate_last_v1;
 extern bool decimate_quadric(Vertex *v, Mat4& Q);
-extern real decimate_min_error();
-extern real decimate_max_error(Model& m);
-extern real decimate_error(Vertex *);
+extern float decimate_min_error();
+extern float decimate_max_error(Model& m);
+extern float decimate_error(Vertex *);
 extern void decimate_contract(Model& m);
-extern void decimate_init(Model& m, real limit);
+extern void decimate_init(Model& m, float limit);
 
 
 

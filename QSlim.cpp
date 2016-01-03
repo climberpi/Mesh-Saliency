@@ -2,30 +2,30 @@
 
 Vec3 randomPoint(const Vec3& v1, const Vec3& v2)
 {
-	real a = random1();
+	float a = random1();
 
 	return a*v1 + (1-a)*v2;
 }
 Vec3 randomPoint(const Vec3& v1, const Vec3& v2, const Vec3& v3)
 {
-	real b1 = 1 - sqrt( 1-random1() );
-	real b2 = (1-b1) * random1();
-	real b3 = 1 - b1 - b2;
+	float b1 = 1 - sqrt( 1-random1() );
+	float b2 = (1-b1) * random1();
+	float b3 = 1 - b1 - b2;
 
 	return b1*v1 + b2*v2 + b3*v3;
 }
-real triangleArea(const Vec3& v1, const Vec3& v2, const Vec3& v3)
+float triangleArea(const Vec3& v1, const Vec3& v2, const Vec3& v3)
 {
 	Vec3 a = v2 - v1;
 	Vec3 b = v3 - v1;
 
 	return 0.5 * length(a ^ b);
 }
-real triangleCompactness(const Vec3& v1, const Vec3& v2, const Vec3& v3)
+float triangleCompactness(const Vec3& v1, const Vec3& v2, const Vec3& v3)
 {
-	real L1 = norm2(v2-v1);
-	real L2 = norm2(v3-v2);
-	real L3 = norm2(v1-v3);
+	float L1 = norm2(v2-v1);
+	float L2 = norm2(v3-v2);
+	float L3 = norm2(v1-v3);
 
 	return FOUR_ROOT3 * triangleArea(v1,v2,v3) / (L1+L2+L3);
 }
@@ -137,40 +137,40 @@ heap_node *Heap::kill(int i)
 Mat4 Mat4::identity(Vec4(1,0,0,0),Vec4(0,1,0,0),Vec4(0,0,1,0),Vec4(0,0,0,1));
 Mat4 Mat4::zero(Vec4(0,0,0,0),Vec4(0,0,0,0),Vec4(0,0,0,0),Vec4(0,0,0,0));
 Mat4 Mat4::unit(Vec4(1,1,1,1),Vec4(1,1,1,1),Vec4(1,1,1,1),Vec4(1,1,1,1));
-Mat4 Mat4::trans(real x, real y, real z)
+Mat4 Mat4::trans(float x, float y, float z)
 {
 	return Mat4(Vec4(1,0,0,x),
 		Vec4(0,1,0,y),
 		Vec4(0,0,1,z),
 		Vec4(0,0,0,1));
 }
-Mat4 Mat4::scale(real x, real y, real z)
+Mat4 Mat4::scale(float x, float y, float z)
 {
 	return Mat4(Vec4(x,0,0,0),
 		Vec4(0,y,0,0),
 		Vec4(0,0,z,0),
 		Vec4(0,0,0,1));
 }
-Mat4 Mat4::xrot(real a)
+Mat4 Mat4::xrot(float a)
 {
-	real c = cos(a);
-	real s = sin(a);
+	float c = cos(a);
+	float s = sin(a);
 
 	return Mat4(Vec4(1, 0, 0, 0),
 		Vec4(0, c,-s, 0),
 		Vec4(0, s, c, 0),
 		Vec4(0, 0, 0, 1));
 }
-Mat4 Mat4::yrot(real a)
+Mat4 Mat4::yrot(float a)
 {
-	real c = cos(a);
-	real s = sin(a);
+	float c = cos(a);
+	float s = sin(a);
 	return Mat4(Vec4(c, 0, s, 0),Vec4(0, 1, 0, 0),Vec4(-s,0, c, 0),Vec4(0, 0, 0, 1));
 }
-Mat4 Mat4::zrot(real a)
+Mat4 Mat4::zrot(float a)
 {
-	real c = cos(a);
-	real s = sin(a);
+	float c = cos(a);
+	float s = sin(a);
 	return Mat4(Vec4(c,-s, 0, 0),Vec4(s, c, 0, 0),Vec4(0, 0, 1, 0),Vec4(0, 0, 0, 1));
 }
 Mat4 Mat4::operator*(const Mat4& m) const
@@ -183,7 +183,7 @@ Mat4 Mat4::operator*(const Mat4& m) const
 
 	return A;
 }
-real Mat4::det() const
+float Mat4::det() const
 {
 	return row[0] * cross(row[1], row[2], row[3]);
 }
@@ -200,10 +200,10 @@ Mat4 Mat4::adjoint() const
 	A.row[3] = cross(-row[0], row[1], row[2]);
 	return A;
 }
-real Mat4::cramerInverse(Mat4& inv) const
+float Mat4::cramerInverse(Mat4& inv) const
 {
 	Mat4 A = adjoint();
-	real d = A.row[0] * row[0];
+	float d = A.row[0] * row[0];
 
 	if( d==0.0 )
 		return 0.0;
@@ -212,14 +212,14 @@ real Mat4::cramerInverse(Mat4& inv) const
 	return d;
 }
 #define SWAP(a, b, t)   {t = a; a = b; b = t;}
-real Mat4::inverse(Mat4& B) const
+float Mat4::inverse(Mat4& B) const
 {
 	Mat4 A(*this);
 	int i, j, k;
-	real max, t, det, pivot;
+	float max, t, det, pivot;
 	for (i=0; i<4; i++)                 /* put identity matrix in B */
 		for (j=0; j<4; j++)
-			B(i, j) = (real)(i==j);
+			B(i, j) = (float)(i==j);
 	det = 1.0;
 	for (i=0; i<4; i++) {               /* eliminate in column i, below diag */
 		max = -1.;
@@ -260,7 +260,7 @@ real Mat4::inverse(Mat4& B) const
 	return det;
 }
 
-ProxGrid::ProxGrid(const Vec3& lo, const Vec3& hi, real dist)
+ProxGrid::ProxGrid(const Vec3& lo, const Vec3& hi, float dist)
 {
 	cellsize = dist;
 	cellsize2 = dist*dist;
@@ -331,27 +331,27 @@ void ProxGrid::proximalPoints(Vec3 *v, buffer<Vec3 *>& close)
 
 
 
-static real Distance2(real x[3], real *y)
+static float Distance2(float x[3], float *y)
 {
-	real a, b, c;
+	float a, b, c;
 	a = x[0] - y[0];  b = x[1] - y[1];  c = x[2] - y[2];
 	return (a * a + b * b + c * c);
 }
-static void interp(real *proj, const real *p1, const real *p2,const real *p3, const real *bary)
+static void interp(float *proj, const float *p1, const float *p2,const float *p3, const float *bary)
 {
 	proj[0] = p1[0] * bary[0] + p2[0] * bary[1] + p3[0] * bary[2];
 	proj[1] = p1[1] * bary[0] + p2[1] * bary[1] + p3[1] * bary[2];
 	proj[2] = p1[2] * bary[0] + p2[2] * bary[1] + p3[2] * bary[2];
 }
-static void Projecth(const real *v1, const real *v2, const real *v3,real *bary)
+static void Projecth(const float *v1, const float *v2, const float *v3,float *bary)
 {
 	int     i;
-	real   vvi[3],vppi[3];
-	real   d12sq, don12,d2, mind2, a;
-	real   proj[3];
-	real   pf[3][3];
-	real   ba[3];
-	real   cba[3];
+	float   vvi[3],vppi[3];
+	float   d12sq, don12,d2, mind2, a;
+	float   proj[3];
+	float   pf[3][3];
+	float   ba[3];
+	float   cba[3];
 
 	mind2 = 1e30;
 	interp(proj,v1,v2,v3,bary);
@@ -397,12 +397,12 @@ static void Projecth(const real *v1, const real *v2, const real *v3,real *bary)
 
 	bary[0] = cba[0]; bary[1] = cba[1]; bary[2] = cba[2];
 }
-static void ProjectPtri(const real *point,  const real *v1, const real *v2,  const real *v3, real *bary)
+static void ProjectPtri(const float *point,  const float *v1, const float *v2,  const float *v3, float *bary)
 {
 	int    i;
-	real  localv2[3], localv3[3], vpp1[3];
-	real  v22,v33,v23,v2pp1,v3pp1;
-	real  a1,a2,a3,denom;
+	float  localv2[3], localv3[3], vpp1[3];
+	float  v22,v33,v23,v2pp1,v3pp1;
+	float  a1,a2,a3,denom;
 
 	for (i = 0; i < 3; i++){
 		localv2[i] = v2[i] - v1[i];
@@ -437,7 +437,7 @@ static void ProjectPtri(const real *point,  const real *v1, const real *v2,  con
 	}
 }
 
-real __gfx_hoppe_dist(const Face3& f, const Vec3& v)
+float __gfx_hoppe_dist(const Face3& f, const Vec3& v)
 {
 	Vec3 bary;
 
@@ -481,7 +481,7 @@ void Bounds::addPoint(const Vec3& v)
 }
 void Bounds::complete()
 {
-	center /= (real)points;
+	center /= (float)points;
 	Vec3 R1 = max-center;
 	Vec3 R2 = min-center;
 	radius = MAX(length(R1), length(R2));
@@ -521,11 +521,11 @@ void Plane::calcFrom(const array<Vec3>& verts)
 
 	d = -n*verts[0];
 }
-real Face3::area()
+float Face3::area()
 {
 	return triangleArea(vertexPos(0),vertexPos(1),vertexPos(2));
 }
-real Face3::distTo(const Vec3& v) const
+float Face3::distTo(const Vec3& v) const
 {
 	return __gfx_hoppe_dist(*this, v);
 }
@@ -556,8 +556,8 @@ void Vertex::remapTo(Vertex *v)
 		{
 			edge_uses(i)->remapEndpoint(this, v);
 		}
-        real* data1 = raw();
-        real* data2 = v->raw();
+        float* data1 = raw();
+        float* data2 = v->raw();
         printf("Kill in remapTo: %d v1=(%f, %f, %f)[%d] v2=(%f, %f, %f)[%d]\n", uniqID, data1[0], data1[1], data1[2], uniqID, data2[0], data2[1], data2[2], v->uniqID);
 		kill();
 	}
@@ -735,16 +735,16 @@ int classifyVertex(Vertex *v)
 
 double setup_time, init_time, slim_time, write_time;
 int face_target = 0;
-real error_tolerance = oo;
+float error_tolerance = oo;
 bool will_use_plane_constraint = true;
 bool will_use_vertex_constraint = false;
 bool will_preserve_boundaries = false;
 bool will_preserve_mesh_quality = false;
 bool will_constrain_boundaries = false;
-real boundary_constraint_weight = 1.0;
+float boundary_constraint_weight = 1.0;
 bool will_weight_by_area = false;
 int placement_policy = PLACE_OPTIMAL;
-real pair_selection_tolerance = 0.0;
+float pair_selection_tolerance = 0.0;
 Model M0;
 
 
@@ -782,7 +782,7 @@ Vec3 Model::synthesizeNormal(Vertex *v)
 	}
 
 	if( n_count )
-		n /= (real)n_count;
+		n /= (float)n_count;
 	else
 	{
 		cerr << "Vertex with no normals!!: " << v->uniqID;
@@ -790,7 +790,7 @@ Vec3 Model::synthesizeNormal(Vertex *v)
 	}
 	return n;
 }
-Vertex *Model::newVertex(real x, real y, real z)
+Vertex *Model::newVertex(float x, float y, float z)
 {
 	Vertex *v = new Vertex(x, y, z);
 	v->uniqID = vertices.add(v);
@@ -857,9 +857,9 @@ void Model::killFace(Face *f)
 		validFaceCount--;
 	}
 }
-void Model::reshapeVertex(Vertex *v, real x, real y, real z)
+void Model::reshapeVertex(Vertex *v, float x, float y, float z)
 {
-    real *data = v->raw();
+    float *data = v->raw();
     printf("(%f, %f, %f)\n", data[0], data[1], data[2]);
 	v->set(x, y, z);
     printf("#(%f, %f, %f)\n", data[0], data[1], data[2]);
@@ -938,7 +938,7 @@ void Model::contract(Vertex *v1, Vertex *v2, const Vec3& to,face_buffer& changed
 {
 	contractionRegion(v1, v2, changed);
 	reshapeVertex(v1, to[X], to[Y], to[Z]);
-    real* data = v1->raw();
+    float* data = v1->raw();
     //printf("[%f, %f, %f]\n", to[X], to[Y], to[Z]);
 	v2->remapTo(v1);
     printf("##(%f, %f, %f) %d %d\n", data[0], data[1], data[2], v1->uniqID, v2->uniqID);
@@ -960,7 +960,7 @@ Mat4 quadrix_vertex_constraint(const Vec3& v)
 
 	return L;
 }
-Mat4 quadrix_plane_constraint(real a, real b, real c, real d)
+Mat4 quadrix_plane_constraint(float a, float b, float c, float d)
 {
 	Mat4 K(Mat4::zero);
 
@@ -971,14 +971,14 @@ Mat4 quadrix_plane_constraint(real a, real b, real c, real d)
 
 	return K;
 }
-Mat4 quadrix_plane_constraint(const Vec3& n, real d)
+Mat4 quadrix_plane_constraint(const Vec3& n, float d)
 {
 	return quadrix_plane_constraint(n[X], n[Y], n[Z], d);
 }
 Mat4 quadrix_plane_constraint(Face& T)
 {
 	const Plane& p = T.plane();
-	real a,b,c,d;
+	float a,b,c,d;
 	p.coeffs(&a, &b, &c, &d);
 
 	return quadrix_plane_constraint(a, b, c, d);
@@ -986,13 +986,13 @@ Mat4 quadrix_plane_constraint(Face& T)
 Mat4 quadrix_plane_constraint(const Vec3& v1, const Vec3& v2, const Vec3& v3)
 {
 	Plane P(v1,v2,v3);
-	real a,b,c,d;
+	float a,b,c,d;
 	P.coeffs(&a, &b, &c, &d);
 	return quadrix_plane_constraint(a, b, c, d);
 }
-real quadrix_evaluate_vertex(const Vec3& v, const Mat4& K)
+float quadrix_evaluate_vertex(const Vec3& v, const Mat4& K)
 {
-	real x=v[X], y=v[Y], z=v[Z];
+	float x=v[X], y=v[Y], z=v[Z];
 	return x*x*K(0,0) + 2*x*y*K(0,1) + 2*x*z*K(0,2) + 2*x*K(0,3)
 		+ y*y*K(1,1)   + 2*y*z*K(1,2) + 2*y*K(1,3)
 		+ z*z*K(2,2)   + 2*z*K(2,3)
@@ -1015,7 +1015,7 @@ Mat4 quadrix_discontinuity_constraint(Edge *edge, const Vec3& n)
 	Vec3 n2 = e ^ n;
 	unitize(n2);
 
-	real d = -n2 * org;
+	float d = -n2 * org;
 	return quadrix_plane_constraint(n2, d);
 }
 Mat4 quadrix_discontinuity_constraint(Edge *edge)
@@ -1036,9 +1036,9 @@ bool quadrix_find_local_fit(const Mat4& K,const Vec3& v1, const Vec3& v2,	Vec3& 
 
 	bool try_midpoint = placement_policy > PLACE_ENDPOINTS;
 
-	real c1 = quadrix_evaluate_vertex(v1, K);
-	real c2 = quadrix_evaluate_vertex(v2, K);
-	real c3;
+	float c1 = quadrix_evaluate_vertex(v1, K);
+	float c2 = quadrix_evaluate_vertex(v2, K);
+	float c3;
 	if( try_midpoint ) c3 = quadrix_evaluate_vertex(v3, K);
 
 	if( c1<c2 )
@@ -1065,12 +1065,12 @@ bool quadrix_find_line_fit(const Mat4& Q,const Vec3& v1, const Vec3& v2,Vec3& ca
 	Vec3 Qv2 = Q*v2;
 	Vec3 Qd  = Q*d;
 
-	real denom = 2*d*Qd;
+	float denom = 2*d*Qd;
 
 	if( denom == 0.0 )
 		return false;
 
-	real a = (d*Qv2 + v2*Qd) / denom;
+	float a = (d*Qv2 + v2*Qd) / denom;
 
 	if( a<0.0 ) a=0.0;
 	if( a>1.0 ) a=1.0;
@@ -1084,20 +1084,20 @@ bool quadrix_find_best_fit(const Mat4& Q, Vec3& candidate)
 	Mat4 K = Q;
 	K(3,0) = K(3,1) = K(3,2) = 0.0;  K(3,3) = 1;
 	Mat4 M;
-	real det = K.inverse(M);
-	if( FEQ(det, 0.0, 1e-12) )
+	float det = K.inverse(M);
+	if( FEQ(det, 0.0f, 1e-12f) )
 		return false;
 	candidate[X] = M(0,3);
 	candidate[Y] = M(1,3);
 	candidate[Z] = M(2,3);
 	return true;
 }
-real quadrix_pair_target(const Mat4& Q,Vertex *v1,Vertex *v2,Vec3& candidate)
+float quadrix_pair_target(const Mat4& Q,Vertex *v1,Vertex *v2,Vec3& candidate)
 {
 	int policy = placement_policy;
 
 	//
-	// This analytic boundary preservation isn't really necessary.  The
+	// This analytic boundary preservation isn't floatly necessary.  The
 	// boundary constraint quadrics are quite effective.  But, I've left it
 	// in anyway.
 	//
@@ -1146,7 +1146,7 @@ class pair_info : public Heapable
 public:
 	Vertex *v0, *v1;
 	Vec3 candidate;
-	real cost;
+	float cost;
 	pair_info(Vertex *a,Vertex *b) { v0=a; v1=b; cost=oo; }
 	bool isValid() { return v0->isValid() && v1->isValid(); }
 };
@@ -1156,13 +1156,13 @@ class vert_info
 public:
 	pair_buffer pairs;
 	Mat4 Q;
-	real norm;
+	float norm;
 	vert_info() : Q(Mat4::zero) { pairs.init(2); norm=0.0; }
 };
 int will_draw_pairs = 0;
 static Heap *heap;
 static array<vert_info> vinfo;
-static real proximity_limit;
+static float proximity_limit;
 static inline vert_info& vertex_info(Vertex *v)
 {
 	return vinfo(v->validID());
@@ -1219,12 +1219,12 @@ int predict_face(Face& F, Vertex *v1, Vertex *v2, Vec3& vnew,Vec3& f1, Vec3& f2,
 	return nmapped;
 }
 #define MESH_INVERSION_PENALTY 1e9
-static real pair_mesh_penalty(Model& M, Vertex *v1, Vertex *v2, Vec3& vnew)
+static float pair_mesh_penalty(Model& M, Vertex *v1, Vertex *v2, Vec3& vnew)
 {
 	static face_buffer changed;
 	changed.reset();
 	M.contractionRegion(v1, v2, changed);
-	real Nmin = 0;
+	float Nmin = 0;
 	for(int i=0; i<changed.length(); i++)
 	{
 		Face& F = *changed(i);
@@ -1233,7 +1233,7 @@ static real pair_mesh_penalty(Model& M, Vertex *v1, Vertex *v2, Vec3& vnew)
 		if( nmapped < 2 )
 		{
 			Plane Pnew(f1, f2, f3);
-			real delta =  Pnew.normal() * F.plane().normal();
+			float delta =  Pnew.normal() * F.plane().normal();
 
 			if( Nmin > delta ) Nmin = delta;
 		}
@@ -1250,7 +1250,7 @@ static void compute_pair_info(pair_info *pair)
 	vert_info& v0_info = vertex_info(v0);
 	vert_info& v1_info = vertex_info(v1);
 	Mat4 Q = v0_info.Q + v1_info.Q;
-	real norm = v0_info.norm + v1_info.norm;
+	float norm = v0_info.norm + v1_info.norm;
 	pair->cost = quadrix_pair_target(Q, v0, v1, pair->candidate);
 	if( will_weight_by_area )
 		pair->cost /= norm;
@@ -1340,7 +1340,7 @@ void decimate_contract(Model& m)
 	}
 
     //Vertex *v0 = pair->v0, *v1 = pair->v1;
-    real *v0 = pair->v0->raw(), *v1 = pair->v1->raw();
+    float *v0 = pair->v0->raw(), *v1 = pair->v1->raw();
     //printf("(%f, %f, %f) (%f, %f, %f)\n", v0[0], v0[1], v0[2], v1[0], v1[1], v1[2]);
 	do_contract(m, pair);
     //v0 = pair->v0->raw();
@@ -1352,18 +1352,18 @@ void decimate_contract(Model& m)
 
 	M0.validVertCount--;  // Attempt to maintain valid vertex information
 }
-real decimate_error(Vertex *v)
+float decimate_error(Vertex *v)
 {
 	vert_info& info = vertex_info(v);
 
-	real err = quadrix_evaluate_vertex(*v, info.Q);
+	float err = quadrix_evaluate_vertex(*v, info.Q);
 
 	if( will_weight_by_area )
 		err /= info.norm;
 
 	return err;
 }
-real decimate_min_error()
+float decimate_min_error()
 {
 	heap_node *top;
 	pair_info *pair;
@@ -1383,9 +1383,9 @@ real decimate_min_error()
 
 	return pair->cost;
 }
-real decimate_max_error(Model& m)
+float decimate_max_error(Model& m)
 {
-	real max_err = 0;
+	float max_err = 0;
 	for(int i=0; i<m.vertCount(); i++)
 		if( m.vertex(i)->isValid() )
 		{
@@ -1393,7 +1393,7 @@ real decimate_max_error(Model& m)
 		}
 		return max_err;
 }
-void decimate_init(Model& m, real limit)
+void decimate_init(Model& m, float limit)
 {
 	int i,j;
 	vinfo.init(m.vertCount());
@@ -1412,7 +1412,7 @@ void decimate_init(Model& m, real limit)
 				if( will_use_plane_constraint )
 				{
 					Mat4 Q = quadrix_plane_constraint(*m.face(i));
-					real norm = 0.0;
+					float norm = 0.0;
 
 					if( will_weight_by_area )
 					{
@@ -1436,7 +1436,7 @@ void decimate_init(Model& m, real limit)
 					if( m.edge(i)->isValid() && check_for_discontinuity(m.edge(i)) )
 					{
 						Mat4 B = quadrix_discontinuity_constraint(m.edge(i));
-						real norm = 0.0;
+						float norm = 0.0;
 
 						if( will_weight_by_area )
 						{
