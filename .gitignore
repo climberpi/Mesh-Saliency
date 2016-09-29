@@ -1,0 +1,12 @@
+
+.idea/Mesh-Saliency.iml
+
+*.xml
+
+.idea/vcs.xml
+
+*.gcno
+
+*.log
+
+old.zip
